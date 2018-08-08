@@ -16,6 +16,9 @@
     <Filter Include="SubDirectory">
       <UniqueIdentifier>{3a76af47-9729-4478-a420-676ab04bc584}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ParentDirectory">
+      <UniqueIdentifier>{ea423d07-5491-47b2-82c4-1ef2c4615cca}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -27,6 +30,9 @@
     <ClInclude Include="SubDirectory\Module1.h">
       <Filter>SubDirectory</Filter>
     </ClInclude>
+    <ClInclude Include="..\Module2.h">
+      <Filter>ParentDirectory</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -37,6 +43,9 @@
     </ClCompile>
     <ClCompile Include="SubDirectory\Module1.cpp">
       <Filter>SubDirectory</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Module2.cpp">
+      <Filter>ParentDirectory</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
