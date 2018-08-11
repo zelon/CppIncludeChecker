@@ -54,6 +54,7 @@ namespace CppIncludeChecker
             }
 
             bool hasChangedFile = false;
+            List<FileContent> appliedFileContents = new List<FileContent>();
             ChangeMaker changeMaker = new ChangeMaker();
             foreach (string filename in fileList)
             {
@@ -79,17 +80,18 @@ namespace CppIncludeChecker
                     hasChangedFile = true;
                     foreach (string success in successfulChanges)
                     {
-                        DualWriteLine(string.Format("Filename:{0},include:{1}", filename, success));
+                        DualWriteLine(string.Format("CheckInclude=>Filename:{0},include:{1}", filename, success));
                     }
                     fileContent.RemoveAllAndWrite(successfulChanges);
+                    appliedFileContents.Add(fileContent);
                 }
             }
-
             if (hasChangedFile == false)
             {
                 SuperWriteLine("There is no needless include. Good!!");
                 return;
             }
+            // Some build can break Rebuild. So check rebuild again
             var lastRebuildResult = builder.Rebuild();
             if (lastRebuildResult.IsSuccess)
             {
@@ -98,6 +100,12 @@ namespace CppIncludeChecker
             else
             {
                 SuperWriteLine("LastRebuild is failed");
+            }
+
+            // Revert all files
+            foreach (var fileContent in appliedFileContents)
+            {
+                fileContent.RevertWrite();
             }
         }
     }
