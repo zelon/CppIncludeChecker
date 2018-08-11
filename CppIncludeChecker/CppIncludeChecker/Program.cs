@@ -7,57 +7,61 @@ namespace CppIncludeChecker
 {
     class Program
     {
-        static void DualWriteLine(string text)
+        static void Log(string text)
         {
             Console.WriteLine(text);
             Debug.WriteLine(text);
         }
 
-        static void SuperWriteLine(string text)
+        class ChangeInfo
         {
-            DualWriteLine("################################################");
-            DualWriteLine("# " + text);
-            DualWriteLine("################################################");
+            public string Filename { get; set; }
+            public string RemoveString { get; set; }
         }
 
         static void Main(string[] args)
         {
-            SuperWriteLine("Start of StartRebuild");
+            var fileLogger = File.CreateText("CppIncludeChecker.log");
+            Log("Start of StartRebuild");
             string solutionFilePath = @"E:\git\CppIncludeChecker\TestCppSolution\TestCppSolution.sln";
             Builder builder = new Builder(solutionFilePath);
             var buildResult = builder.Rebuild();
-            SuperWriteLine("End of StartRebuild");
+            Log("End of StartRebuild");
             if (buildResult.IsSuccess == false || buildResult.errors.Count > 0)
             {
-                DualWriteLine("There are errors");
+                Log("There are errors");
                 foreach (string line in buildResult.outputs)
                 {
-                    DualWriteLine(line);
+                    Log(line);
                 }
                 foreach (string line in buildResult.errors)
                 {
-                    DualWriteLine(line);
+                    Log(line);
                 }
                 return;
             }
+
+            fileLogger.WriteLine("=== StartRebuild result ===");
             foreach (string line in buildResult.outputs)
             {
-                DualWriteLine(line);
+                fileLogger.WriteLine(line);
             }
 
             CompileFileListExtractor compileFileListExtractor = new CompileFileListExtractor(buildResult.outputs);
             var fileList = compileFileListExtractor.GetFilenames();
             if (fileList.Count <= 0)
             {
-                SuperWriteLine("Cannot extract any file");
+                Log("Cannot extract any file");
                 return;
             }
 
             bool hasChangedFile = false;
             List<FileContent> appliedFileContents = new List<FileContent>();
             ChangeMaker changeMaker = new ChangeMaker();
+            List<ChangeInfo> changeInfos = new List<ChangeInfo>();
             foreach (string filename in fileList)
             {
+                Log("Checking " + filename);
                 FileContent fileContent = new FileContent(filename);
                 List<string> changeCandidates = changeMaker.Analyze(fileContent.OriginalContent);
                 if (changeCandidates.Count <= 0)
@@ -73,6 +77,7 @@ namespace CppIncludeChecker
                     {
                         successfulChanges.Add(removeString);
                     }
+                    fileLogger.WriteLine("=== {0}:{1} build result ===", filename, removeString);
                     fileContent.RevertWrite();
                 }
                 if (successfulChanges.Count > 0)
@@ -80,7 +85,12 @@ namespace CppIncludeChecker
                     hasChangedFile = true;
                     foreach (string success in successfulChanges)
                     {
-                        DualWriteLine(string.Format("CheckInclude=>Filename:{0},include:{1}", filename, success));
+                        ChangeInfo changeInfo = new ChangeInfo() {
+                            Filename = filename,
+                            RemoveString = success
+                        };
+                        Log(string.Format("CheckedInclude:{0}:{1}", changeInfo.Filename, changeInfo.RemoveString));
+                        changeInfos.Add(changeInfo);
                     }
                     fileContent.RemoveAllAndWrite(successfulChanges);
                     appliedFileContents.Add(fileContent);
@@ -88,18 +98,29 @@ namespace CppIncludeChecker
             }
             if (hasChangedFile == false)
             {
-                SuperWriteLine("There is no needless include. Good!!");
+                Log("There is no needless include. Good!!");
                 return;
             }
             // Some build can break Rebuild. So check rebuild again
+            Log("Start of LastRebuild");
             var lastRebuildResult = builder.Rebuild();
+            Log("End of LastRebuild");
+            fileLogger.WriteLine("=== LastRebuild result ===");
+            foreach (string line in lastRebuildResult.outputs)
+            {
+                fileLogger.WriteLine(line);
+            }
             if (lastRebuildResult.IsSuccess)
             {
-                SuperWriteLine("LastRebuild is successful");
+                Log("LastRebuild is successful");
+                foreach (var changeInfo in changeInfos)
+                {
+                    Log(string.Format("CheckInclude:{0}:{1}", changeInfo.Filename, changeInfo.RemoveString));
+                }
             }
             else
             {
-                SuperWriteLine("LastRebuild is failed");
+                Log("LastRebuild is failed");
             }
 
             // Revert all files
