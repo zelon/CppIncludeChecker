@@ -53,11 +53,12 @@ namespace CppIncludeChecker
                 return;
             }
 
+            bool hasChangedFile = false;
             ChangeMaker changeMaker = new ChangeMaker();
             foreach (string filename in fileList)
             {
                 FileContent fileContent = new FileContent(filename);
-                List<string> changeCandidates = changeMaker.Analyze(filename);
+                List<string> changeCandidates = changeMaker.Analyze(fileContent.OriginalContent);
                 if (changeCandidates.Count <= 0)
                 {
                     continue;
@@ -73,9 +74,22 @@ namespace CppIncludeChecker
                     }
                     fileContent.RevertWrite();
                 }
-                fileContent.RemoveAllAndWrite(successfulChanges);
+                if (successfulChanges.Count > 0)
+                {
+                    hasChangedFile = true;
+                    foreach (string success in successfulChanges)
+                    {
+                        DualWriteLine(string.Format("Filename:{0},include:{1}", filename, success));
+                    }
+                    fileContent.RemoveAllAndWrite(successfulChanges);
+                }
             }
 
+            if (hasChangedFile == false)
+            {
+                SuperWriteLine("There is no needless include. Good!!");
+                return;
+            }
             var lastRebuildResult = builder.Rebuild();
             if (lastRebuildResult.IsSuccess)
             {

@@ -8,21 +8,22 @@ namespace CppIncludeChecker
     class FileContent
     {
         private readonly string _filename;
-        private readonly string _originalContent;
+        public string OriginalContent { get; private set; }
+
         public FileContent(string filename)
         {
             _filename = filename;
-            _originalContent = File.ReadAllText(_filename);
+            OriginalContent = File.ReadAllText(_filename);
         }
 
         public void RemoveAndWrite(string text)
         {
-            File.WriteAllText(_filename, _originalContent.Replace(text, ""));
+            File.WriteAllText(_filename, OriginalContent.Replace(text, ""));
         }
 
         public void RemoveAllAndWrite(List<string> texts)
         {
-            string result = _originalContent;
+            string result = OriginalContent;
             foreach (string text in texts)
             {
                 result = result.Replace(text, "");
@@ -32,7 +33,7 @@ namespace CppIncludeChecker
 
         public void RevertWrite()
         {
-            File.WriteAllText(_filename, _originalContent);
+            File.WriteAllText(_filename, OriginalContent);
         }
     }
 }
