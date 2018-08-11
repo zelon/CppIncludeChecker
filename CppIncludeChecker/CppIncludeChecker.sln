@@ -5,6 +5,8 @@ VisualStudioVersion = 15.0.27703.2042
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CppIncludeChecker", "CppIncludeChecker\CppIncludeChecker.csproj", "{01947E23-1F52-435D-ABD1-D22A8CAB919C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTest", "UnitTest\UnitTest.csproj", "{D6F678B6-96D8-456C-9F02-D15096817E9F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,18 @@ Global
 		{01947E23-1F52-435D-ABD1-D22A8CAB919C}.Release|x64.Build.0 = Release|Any CPU
 		{01947E23-1F52-435D-ABD1-D22A8CAB919C}.Release|x86.ActiveCfg = Release|Any CPU
 		{01947E23-1F52-435D-ABD1-D22A8CAB919C}.Release|x86.Build.0 = Release|Any CPU
+		{D6F678B6-96D8-456C-9F02-D15096817E9F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D6F678B6-96D8-456C-9F02-D15096817E9F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D6F678B6-96D8-456C-9F02-D15096817E9F}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{D6F678B6-96D8-456C-9F02-D15096817E9F}.Debug|x64.Build.0 = Debug|Any CPU
+		{D6F678B6-96D8-456C-9F02-D15096817E9F}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{D6F678B6-96D8-456C-9F02-D15096817E9F}.Debug|x86.Build.0 = Debug|Any CPU
+		{D6F678B6-96D8-456C-9F02-D15096817E9F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D6F678B6-96D8-456C-9F02-D15096817E9F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D6F678B6-96D8-456C-9F02-D15096817E9F}.Release|x64.ActiveCfg = Release|Any CPU
+		{D6F678B6-96D8-456C-9F02-D15096817E9F}.Release|x64.Build.0 = Release|Any CPU
+		{D6F678B6-96D8-456C-9F02-D15096817E9F}.Release|x86.ActiveCfg = Release|Any CPU
+		{D6F678B6-96D8-456C-9F02-D15096817E9F}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
