@@ -12,10 +12,14 @@ namespace CppIncludeChecker
         private List<FileModifier> _appliedFileModifiers = new List<FileModifier>();
         private List<string> _filenameFilters = new List<string>();
         private List<string> _includeFilters = new List<string>();
+        private bool _applyChange;
 
-        public Program(string solutionFilePath)
+        public Program(string solutionFilePath, bool applyChange)
         {
             Log("SolutionFile: " + solutionFilePath);
+            _applyChange = applyChange;
+            Log("ApplyChange: " + _applyChange);
+
             _builder = new Builder(solutionFilePath);
             _fileLogger = File.CreateText("CppIncludeChecker.log");
 
@@ -57,8 +61,15 @@ namespace CppIncludeChecker
                 PrintAppliedFileModifiers();
             }
 
-            // Revert all changes to test builds
-            RevertAll();
+            if (_applyChange == false)
+            {
+                RevertAll();
+                Log("All test changes has been reverted");
+            }
+            else
+            {
+                Log("All test changes has been applied");
+            }
         }
 
         private Builder.BuildResult RebuildAtStart()
@@ -254,7 +265,7 @@ namespace CppIncludeChecker
         {
             if (args.Length < 1)
             {
-                Console.WriteLine("Usage: {0} SolutionFilePath", Environment.CommandLine);
+                Console.WriteLine("Usage: {0} SolutionFilePath [--applychange]", Environment.CommandLine);
                 return;
             }
             string solutionFilePath = args[0];
@@ -263,8 +274,12 @@ namespace CppIncludeChecker
                 Console.WriteLine("Cannot find the solution file:{0}", solutionFilePath);
                 return;
             }
-
-            using (Program program = new Program(solutionFilePath))
+            bool applyChange = false;
+            if (args.Length == 2 && args[1] == "--applychange")
+            {
+                applyChange = true;
+            }
+            using (Program program = new Program(solutionFilePath, applyChange))
             {
                 program.Check();
             }

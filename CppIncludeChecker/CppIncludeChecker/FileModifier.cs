@@ -1,10 +1,11 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Text.RegularExpressions;
 
 namespace CppIncludeChecker
 {
-    class FileModifier
+    public class FileModifier
     {
         public List<string> RemovedStrings { get; private set; }
         public string Filename { get; private set; }
@@ -35,7 +36,7 @@ namespace CppIncludeChecker
             string result = OriginalContent;
             foreach (string text in texts)
             {
-                result = result.Replace(text, "");
+                result = RemoveIncludeLine(result, text);
             }
             File.WriteAllText(Filename, result);
 
@@ -53,6 +54,12 @@ namespace CppIncludeChecker
         {
             var originalAttributes = File.GetAttributes(filename);
             File.SetAttributes(filename, originalAttributes & ~FileAttributes.ReadOnly);
+        }
+
+        public static string RemoveIncludeLine(string input, string include)
+        {
+            string pattern = string.Format("{0}.*\n", include);
+            return Regex.Replace(input, pattern, "");
         }
     }
 }

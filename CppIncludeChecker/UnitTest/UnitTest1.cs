@@ -105,5 +105,37 @@ return 0;
             Assert.IsTrue(includes.Exists((include) => include == @"#include ""b.h"""));
             Assert.IsTrue(includes.Exists((include) => include == @"#include ""MyClass.h"""));
         }
+
+        [TestMethod]
+        public void TestRemoveInclude1()
+        {
+            string input = "#include <string>\n#include <map>";
+            string result = FileModifier.RemoveIncludeLine(input, "#include <string>");
+            Assert.IsTrue(result == "#include <map>");
+        }
+
+        [TestMethod]
+        public void TestRemoveInclude2()
+        {
+            string input = "#include <string>\r\n#include <map>";
+            string result = FileModifier.RemoveIncludeLine(input, "#include <string>");
+            Assert.IsTrue(result == "#include <map>");
+        }
+
+        [TestMethod]
+        public void TestRemoveInclude3()
+        {
+            string input = "#include <string>\n#include <test>\n#include <map>";
+            string result = FileModifier.RemoveIncludeLine(input, "#include <string>");
+            Assert.IsTrue(result == "#include <test>\n#include <map>");
+        }
+
+        [TestMethod]
+        public void TestRemoveInclude4()
+        {
+            string input = "#include <before>\n#include <string>\n#include <test>\n#include <map>";
+            string result = FileModifier.RemoveIncludeLine(input, "#include <string>");
+            Assert.IsTrue(result == "#include <before>\n#include <test>\n#include <map>");
+        }
     }
 }
