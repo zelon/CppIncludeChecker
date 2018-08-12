@@ -81,8 +81,7 @@ Build succeeded.
             }
             var fileList = new CompileFileListExtractor(outputs).GetFilenames();
             Assert.IsTrue(fileList.Exists((filename) => filename == @"E:\git\CppIncludeChecker\TestCppSolution\TestCppSolution\SubDirectory\Module1.cpp"));
-            Assert.IsTrue(fileList.Exists((filename) => filename == @"E:\git\CppIncludeChecker\TestCppSolution\TestCppSolution\..\Module2.cpp"));
-            Assert.IsTrue(fileList.Exists((filename) => filename == @"E:\git\CppIncludeChecker\TestCppSolution\TestCppSolution\SubDirectory\Module1.cpp"));
+            Assert.IsTrue(fileList.Exists((filename) => filename == @"E:\git\CppIncludeChecker\TestCppSolution\Module2.cpp"));
             Assert.IsTrue(fileList.Exists((filename) => filename == @"E:\git\CppIncludeChecker\TestCppSolution\TestCppSolution\TestCppSolution.cpp"));
         }
 
