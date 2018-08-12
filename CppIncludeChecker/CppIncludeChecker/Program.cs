@@ -11,9 +11,8 @@ namespace CppIncludeChecker
         private TextWriter _fileLogger;
         private List<FileModifier> _appliedFileModifiers = new List<FileModifier>();
 
-        public Program()
+        public Program(string solutionFilePath)
         {
-            string solutionFilePath = @"E:\git\CppIncludeChecker\TestCppSolution\TestCppSolution.sln";
             _builder = new Builder(solutionFilePath);
             _fileLogger = File.CreateText("CppIncludeChecker.log");
         }
@@ -200,7 +199,19 @@ namespace CppIncludeChecker
 
         static void Main(string[] args)
         {
-            using (Program program = new Program())
+            if (args.Length < 1)
+            {
+                Console.WriteLine("Usage: {0} SolutionFilePath", Environment.CommandLine);
+                return;
+            }
+            string solutionFilePath = args[0];
+            if (File.Exists(solutionFilePath) == false)
+            {
+                Console.WriteLine("Cannot find the solution file:{0}", solutionFilePath);
+                return;
+            }
+
+            using (Program program = new Program(solutionFilePath))
             {
                 program.Check();
             }

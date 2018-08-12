@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "CppIncludeChecker": {
+      "commandName": "Project",
+      "commandLineArgs": "E:\\git\\CppIncludeChecker\\TestCppSolution\\TestCppSolution.sln"
+    }
+  }
+}
