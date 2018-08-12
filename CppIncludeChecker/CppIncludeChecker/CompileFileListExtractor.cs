@@ -39,7 +39,7 @@ namespace CppIncludeChecker
                         foreach (string filename in extractedFilenames)
                         {
                             string projectFileDirectoryPath = Path.GetDirectoryName(projectFileFullPath);
-                            string fullpath = Path.Combine(projectFileDirectoryPath, filename);
+                            string fullpath = Path.GetFullPath(Path.Combine(projectFileDirectoryPath, filename));
                             if (File.Exists(fullpath))
                             {
                                 filenames.Add(fullpath);
