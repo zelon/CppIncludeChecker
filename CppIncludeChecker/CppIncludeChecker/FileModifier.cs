@@ -4,7 +4,7 @@ using System.IO;
 
 namespace CppIncludeChecker
 {
-    class FileContent
+    class FileModifier
     {
         public List<string> RemovedStrings { get; private set; }
         public string Filename { get; private set; }
@@ -12,7 +12,7 @@ namespace CppIncludeChecker
         private byte[] _originalContentBytes;
         private FileAttributes _originalFileAttributes;
 
-        public FileContent(string filename)
+        public FileModifier(string filename)
         {
             Filename = filename;
             _originalFileAttributes = File.GetAttributes(Filename);

@@ -9,7 +9,7 @@ namespace CppIncludeChecker
     {
         private Builder _builder;
         private TextWriter _fileLogger;
-        private List<FileContent> _appliedFileContents = new List<FileContent>();
+        private List<FileModifier> _appliedFileModifiers = new List<FileModifier>();
 
         public Program()
         {
@@ -47,7 +47,7 @@ namespace CppIncludeChecker
             Builder.BuildResult lastBuildResult = RebuildAtLast();
             if (lastBuildResult.IsSuccess)
             {
-                PrintAppliedFileContents();
+                PrintAppliedFileModifiers();
             }
 
             // Revert all changes to test builds
@@ -80,8 +80,8 @@ namespace CppIncludeChecker
             foreach (string filename in filenames)
             {
                 Log("Checking " + filename);
-                FileContent fileContent = new FileContent(filename);
-                List<string> changeCandidates = changeMaker.Analyze(fileContent.OriginalContent);
+                FileModifier fileModifier = new FileModifier(filename);
+                List<string> changeCandidates = changeMaker.Analyze(fileModifier.OriginalContent);
                 if (changeCandidates.Count <= 0)
                 {
                     continue;
@@ -89,14 +89,14 @@ namespace CppIncludeChecker
                 List<string> successfulChanges = new List<string>();
                 foreach (var removeString in changeCandidates)
                 {
-                    fileContent.RemoveAndWrite(removeString);
+                    fileModifier.RemoveAndWrite(removeString);
                     var testBuildResult = _builder.Build();
                     if (testBuildResult.IsSuccess)
                     {
                         successfulChanges.Add(removeString);
                     }
                     LogToFile(string.Format("=== {0}:{1} build result ===", filename, removeString), testBuildResult.outputs);
-                    fileContent.RevertAndWrite();
+                    fileModifier.RevertAndWrite();
                 }
                 if (successfulChanges.Count > 0)
                 {
@@ -108,11 +108,11 @@ namespace CppIncludeChecker
                         };
                         Log(string.Format("MarkedInclude:{0}:{1}", changeInfo.Filename, changeInfo.RemoveString));
                     }
-                    fileContent.RemoveAndWrite(successfulChanges);
-                    _appliedFileContents.Add(fileContent);
+                    fileModifier.RemoveAndWrite(successfulChanges);
+                    _appliedFileModifiers.Add(fileModifier);
                 }
             }
-            return _appliedFileContents.Count;
+            return _appliedFileModifiers.Count;
         }
 
         private Builder.BuildResult RebuildAtLast()
@@ -132,13 +132,13 @@ namespace CppIncludeChecker
             return lastRebuildResult;
         }
 
-        private void PrintAppliedFileContents()
+        private void PrintAppliedFileModifiers()
         {
-            foreach (FileContent fileContent in _appliedFileContents)
+            foreach (FileModifier fileModifier in _appliedFileModifiers)
             {
-                foreach (string removedString in fileContent.RemovedStrings)
+                foreach (string removedString in fileModifier.RemovedStrings)
                 {
-                    Log(string.Format("NeedlessInclude:{0}:{1}", fileContent.Filename, removedString));
+                    Log(string.Format("NeedlessInclude:{0}:{1}", fileModifier.Filename, removedString));
                 }
             }
         }
@@ -192,9 +192,9 @@ namespace CppIncludeChecker
 
         private void RevertAll()
         {
-            foreach (var fileContent in _appliedFileContents)
+            foreach (var fileModifier in _appliedFileModifiers)
             {
-                fileContent.RevertAndWrite();
+                fileModifier.RevertAndWrite();
             }
         }
 
