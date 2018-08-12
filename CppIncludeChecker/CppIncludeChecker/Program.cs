@@ -13,6 +13,7 @@ namespace CppIncludeChecker
 
         public Program(string solutionFilePath)
         {
+            Log("SolutionFile: " + solutionFilePath);
             _builder = new Builder(solutionFilePath);
             _fileLogger = File.CreateText("CppIncludeChecker.log");
         }
