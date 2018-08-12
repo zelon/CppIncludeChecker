@@ -1,48 +1,52 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
-using System.Text;
 
 namespace CppIncludeChecker
 {
     class FileContent
     {
-        private readonly string _filename;
+        public List<string> RemovedStrings { get; private set; }
+        public string Filename { get; private set; }
         public string OriginalContent { get; private set; }
         private byte[] _originalContentBytes;
         private FileAttributes _originalFileAttributes;
 
         public FileContent(string filename)
         {
-            _filename = filename;
-            _originalFileAttributes = File.GetAttributes(_filename);
+            Filename = filename;
+            _originalFileAttributes = File.GetAttributes(Filename);
 
-            _originalContentBytes = File.ReadAllBytes(_filename);
-            OriginalContent = File.ReadAllText(_filename);
+            _originalContentBytes = File.ReadAllBytes(Filename);
+            OriginalContent = File.ReadAllText(Filename);
         }
 
         public void RemoveAndWrite(string text)
         {
-            RemoveReadOnlyAttribute(_filename);
-            File.WriteAllText(_filename, OriginalContent.Replace(text, ""));
+            RemoveAndWrite(new List<string> { text });
         }
 
-        public void RemoveAllAndWrite(List<string> texts)
+        public void RemoveAndWrite(List<string> texts)
         {
+            Debug.Assert(RemovedStrings == null);
+            RemovedStrings = texts;
+
+            RemoveReadOnlyAttribute(Filename);
             string result = OriginalContent;
             foreach (string text in texts)
             {
                 result = result.Replace(text, "");
             }
-            RemoveReadOnlyAttribute(_filename);
-            File.WriteAllText(_filename, result);
+            File.WriteAllText(Filename, result);
+
         }
 
-        public void RevertWrite()
+        public void RevertAndWrite()
         {
-            RemoveReadOnlyAttribute(_filename);
-            File.WriteAllBytes(_filename, _originalContentBytes);
-            File.SetAttributes(_filename, _originalFileAttributes);
+            RemoveReadOnlyAttribute(Filename);
+            File.WriteAllBytes(Filename, _originalContentBytes);
+            File.SetAttributes(Filename, _originalFileAttributes);
+            RemovedStrings = null;
         }
 
         private static void RemoveReadOnlyAttribute(string filename)

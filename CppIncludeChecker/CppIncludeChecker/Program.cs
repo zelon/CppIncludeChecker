@@ -5,61 +5,79 @@ using System.IO;
 
 namespace CppIncludeChecker
 {
-    class Program
+    class Program : IDisposable
     {
-        static void Log(string text)
-        {
-            Console.WriteLine(text);
-            Debug.WriteLine(text);
-        }
+        private Builder _builder;
+        private TextWriter _fileLogger;
+        private List<FileContent> _appliedFileContents = new List<FileContent>();
 
-        class ChangeInfo
+        public Program()
         {
-            public string Filename { get; set; }
-            public string RemoveString { get; set; }
-        }
-
-        static void Main(string[] args)
-        {
-            var fileLogger = File.CreateText("CppIncludeChecker.log");
-            Log("Start of StartRebuild");
             string solutionFilePath = @"E:\git\CppIncludeChecker\TestCppSolution\TestCppSolution.sln";
-            Builder builder = new Builder(solutionFilePath);
-            var buildResult = builder.Rebuild();
-            Log("End of StartRebuild");
-            if (buildResult.IsSuccess == false || buildResult.errors.Count > 0)
+            _builder = new Builder(solutionFilePath);
+            _fileLogger = File.CreateText("CppIncludeChecker.log");
+        }
+
+        public void Dispose()
+        {
+            _fileLogger.Close();
+        }
+
+        public void Check()
+        {
+            Builder.BuildResult startBuildResult = RebuildAtStart();
+            if (startBuildResult.IsSuccess == false)
             {
-                Log("There are errors");
-                foreach (string line in buildResult.outputs)
-                {
-                    Log(line);
-                }
-                foreach (string line in buildResult.errors)
-                {
-                    Log(line);
-                }
                 return;
             }
-
-            fileLogger.WriteLine("=== StartRebuild result ===");
-            foreach (string line in buildResult.outputs)
-            {
-                fileLogger.WriteLine(line);
-            }
-
-            CompileFileListExtractor compileFileListExtractor = new CompileFileListExtractor(buildResult.outputs);
-            var fileList = compileFileListExtractor.GetFilenames();
-            if (fileList.Count <= 0)
+            List<string> filenames = ExtractFilenameList(startBuildResult.outputs);
+            if (filenames.Count <= 0)
             {
                 Log("Cannot extract any file");
                 return;
             }
+            int changedCount = TryRemoveIncludeAndCollectChanges(filenames);
+            if (changedCount <= 0)
+            {
+                Log("There is no needless include. Good!!");
+                return;
+            }
 
-            bool hasChangedFile = false;
-            List<FileContent> appliedFileContents = new List<FileContent>();
+            // Some build can break Rebuild. So check rebuild again
+            Builder.BuildResult lastBuildResult = RebuildAtLast();
+            if (lastBuildResult.IsSuccess)
+            {
+                PrintAppliedFileContents();
+            }
+
+            // Revert all changes to test builds
+            RevertAll();
+        }
+
+        private Builder.BuildResult RebuildAtStart()
+        {
+            Log("Start of StartRebuild");
+            Builder.BuildResult buildResult = _builder.Rebuild();
+            Log("End of StartRebuild");
+            if (buildResult.IsSuccess == false || buildResult.errors.Count > 0)
+            {
+                Log("There are errors of StartRebuild", buildResult.outputs, buildResult.errors);
+                return buildResult;
+            }
+            LogToFile("=== StartRebuild result ===", buildResult.outputs);
+            return buildResult;
+        }
+
+        private List<string> ExtractFilenameList(List<string> outputs)
+        {
+            CompileFileListExtractor compileFileListExtractor = new CompileFileListExtractor(outputs);
+            return compileFileListExtractor.GetFilenames();
+        }
+
+        private int TryRemoveIncludeAndCollectChanges(List<string> filenames)
+        {
             ChangeMaker changeMaker = new ChangeMaker();
-            List<ChangeInfo> changeInfos = new List<ChangeInfo>();
-            foreach (string filename in fileList)
+            foreach (string filename in filenames)
             {
                 Log("Checking " + filename);
                 FileContent fileContent = new FileContent(filename);
@@ -72,61 +90,119 @@ namespace CppIncludeChecker
                 foreach (var removeString in changeCandidates)
                 {
                     fileContent.RemoveAndWrite(removeString);
-                    var testBuildResult = builder.Build();
+                    var testBuildResult = _builder.Build();
                     if (testBuildResult.IsSuccess)
                     {
                         successfulChanges.Add(removeString);
                     }
-                    fileLogger.WriteLine("=== {0}:{1} build result ===", filename, removeString);
-                    fileContent.RevertWrite();
+                    LogToFile(string.Format("=== {0}:{1} build result ===", filename, removeString), testBuildResult.outputs);
+                    fileContent.RevertAndWrite();
                 }
                 if (successfulChanges.Count > 0)
                 {
-                    hasChangedFile = true;
                     foreach (string success in successfulChanges)
                     {
                         ChangeInfo changeInfo = new ChangeInfo() {
                             Filename = filename,
                             RemoveString = success
                         };
-                        Log(string.Format("CheckedInclude:{0}:{1}", changeInfo.Filename, changeInfo.RemoveString));
-                        changeInfos.Add(changeInfo);
+                        Log(string.Format("MarkedInclude:{0}:{1}", changeInfo.Filename, changeInfo.RemoveString));
                     }
-                    fileContent.RemoveAllAndWrite(successfulChanges);
-                    appliedFileContents.Add(fileContent);
+                    fileContent.RemoveAndWrite(successfulChanges);
+                    _appliedFileContents.Add(fileContent);
                 }
             }
-            if (hasChangedFile == false)
-            {
-                Log("There is no needless include. Good!!");
-                return;
-            }
-            // Some build can break Rebuild. So check rebuild again
+            return _appliedFileContents.Count;
+        }
+
+        private Builder.BuildResult RebuildAtLast()
+        {
             Log("Start of LastRebuild");
-            var lastRebuildResult = builder.Rebuild();
+            var lastRebuildResult = _builder.Rebuild();
             Log("End of LastRebuild");
-            fileLogger.WriteLine("=== LastRebuild result ===");
-            foreach (string line in lastRebuildResult.outputs)
-            {
-                fileLogger.WriteLine(line);
-            }
+            LogToFile("=== LastRebuild result ===", lastRebuildResult.outputs);
             if (lastRebuildResult.IsSuccess)
             {
                 Log("LastRebuild is successful");
-                foreach (var changeInfo in changeInfos)
-                {
-                    Log(string.Format("CheckInclude:{0}:{1}", changeInfo.Filename, changeInfo.RemoveString));
-                }
             }
             else
             {
                 Log("LastRebuild is failed");
             }
+            return lastRebuildResult;
+        }
 
-            // Revert all files
-            foreach (var fileContent in appliedFileContents)
+        private void PrintAppliedFileContents()
+        {
+            foreach (FileContent fileContent in _appliedFileContents)
             {
-                fileContent.RevertWrite();
+                foreach (string removedString in fileContent.RemovedStrings)
+                {
+                    Log(string.Format("NeedlessInclude:{0}:{1}", fileContent.Filename, removedString));
+                }
+            }
+        }
+
+        void Log(string text, List<string> outputs = null, List<string> errors = null)
+        {
+            Console.WriteLine(text);
+            Debug.WriteLine(text);
+            if (outputs != null)
+            {
+                foreach (string line in outputs)
+                {
+                    Console.WriteLine(line);
+                    Debug.WriteLine(line);
+                }
+            }
+            if (errors != null)
+            {
+                foreach (string line in errors)
+                {
+                    Console.WriteLine(line);
+                    Debug.WriteLine(line);
+                }
+            }
+        }
+
+        void LogToFile(string text, List<string> outputs = null, List<string> errors = null)
+        {
+            _fileLogger.WriteLine(text);
+            if (outputs != null)
+            {
+                foreach (string line in outputs)
+                {
+                    _fileLogger.WriteLine(line);
+                }
+            }
+            if (errors != null)
+            {
+                foreach (string line in errors)
+                {
+                    _fileLogger.WriteLine(line);
+                }
+            }
+        }
+
+        class ChangeInfo
+        {
+            public string Filename { get; set; }
+            public string RemoveString { get; set; }
+        }
+
+        private void RevertAll()
+        {
+            foreach (var fileContent in _appliedFileContents)
+            {
+                fileContent.RevertAndWrite();
+            }
+        }
+
+        static void Main(string[] args)
+        {
+            using (Program program = new Program())
+            {
+                program.Check();
             }
         }
     }
