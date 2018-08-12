@@ -12,7 +12,7 @@ namespace CppIncludeChecker
 
         }
 
-        public List<string> Analyze(string fileContent)
+        public List<string> AnalyzeIncludeLines(string fileContent)
         {
             List<string> changes = new List<string>();
 

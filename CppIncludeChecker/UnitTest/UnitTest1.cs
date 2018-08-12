@@ -101,7 +101,7 @@ return 0;
 ";
 
             ChangeMaker changeMaker = new ChangeMaker();
-            List<string> includes = changeMaker.Analyze(fileContent);
+            List<string> includes = changeMaker.AnalyzeIncludeLines(fileContent);
             Assert.IsTrue(includes.Exists((include) => include == @"#include ""a.h"""));
             Assert.IsTrue(includes.Exists((include) => include == @"#include ""b.h"""));
             Assert.IsTrue(includes.Exists((include) => include == @"#include ""MyClass.h"""));

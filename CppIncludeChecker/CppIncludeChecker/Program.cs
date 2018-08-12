@@ -10,12 +10,18 @@ namespace CppIncludeChecker
         private Builder _builder;
         private TextWriter _fileLogger;
         private List<FileModifier> _appliedFileModifiers = new List<FileModifier>();
+        private List<string> _filenameFilters = new List<string>();
+        private List<string> _includeFilters = new List<string>();
 
         public Program(string solutionFilePath)
         {
             Log("SolutionFile: " + solutionFilePath);
             _builder = new Builder(solutionFilePath);
             _fileLogger = File.CreateText("CppIncludeChecker.log");
+
+            _filenameFilters.Add("stdafx.cpp");
+
+            _includeFilters.Add("stdafx.h");
         }
 
         public void Dispose()
@@ -31,6 +37,7 @@ namespace CppIncludeChecker
                 return;
             }
             List<string> filenames = ExtractFilenameList(startBuildResult.outputs);
+            filenames = FilterOutByFilename(filenames);
             if (filenames.Count <= 0)
             {
                 Log("Cannot extract any file");
@@ -74,6 +81,28 @@ namespace CppIncludeChecker
             return compileFileListExtractor.GetFilenames();
         }
 
+        private List<string> FilterOutByFilename(List<string> filenames)
+        {
+            List<string> outFilenames = new List<string>();
+            foreach (string filename in filenames)
+            {
+                bool isInFilter = false;
+                foreach (string filterFilename in _filenameFilters)
+                {
+                    if (filename.Contains(filterFilename))
+                    {
+                        isInFilter = true;
+                        break;
+                    }
+                }
+                if (isInFilter == false)
+                {
+                    outFilenames.Add(filename);
+                }
+            }
+            return outFilenames;
+        }
+
         private int TryRemoveIncludeAndCollectChanges(List<string> filenames)
         {
             ChangeMaker changeMaker = new ChangeMaker();
@@ -81,7 +110,8 @@ namespace CppIncludeChecker
             {
                 Log("Checking " + filename);
                 FileModifier fileModifier = new FileModifier(filename);
-                List<string> changeCandidates = changeMaker.Analyze(fileModifier.OriginalContent);
+                List<string> changeCandidates = changeMaker.AnalyzeIncludeLines(fileModifier.OriginalContent);
+                changeCandidates = FilterOutByInclude(changeCandidates);
                 if (changeCandidates.Count <= 0)
                 {
                     continue;
@@ -113,6 +143,28 @@ namespace CppIncludeChecker
                 }
             }
             return _appliedFileModifiers.Count;
+        }
+
+        private List<string> FilterOutByInclude(List<string> includes)
+        {
+            List<string> outIncludeList = new List<string>();
+            foreach (string include in includes)
+            {
+                bool isInFilter = false;
+                foreach (string filter in _includeFilters)
+                {
+                    if (include.Contains(filter))
+                    {
+                        isInFilter = true;
+                        break;
+                    }
+                }
+                if (isInFilter == false)
+                {
+                    outIncludeList.Add(include);
+                }
+            }
+            return outIncludeList;
         }
 
         private Builder.BuildResult RebuildAtLast()
