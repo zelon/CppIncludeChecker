@@ -217,6 +217,8 @@ namespace CppIncludeChecker
 
         void Log(string text, List<string> outputs = null, List<string> errors = null)
         {
+            text = string.Format("{0}: {1}", DateTime.Now.ToLongTimeString(), text);
+
             Console.WriteLine(text);
             Debug.WriteLine(text);
             if (outputs != null)
