@@ -10,22 +10,31 @@ namespace CppIncludeChecker
         private Builder _builder;
         private TextWriter _fileLogger;
         private List<FileModifier> _appliedFileModifiers = new List<FileModifier>();
-        private List<string> _filenameFilters = new List<string>();
-        private List<string> _includeFilters = new List<string>();
+        private List<string> _filenameFilters;
+        private List<string> _includeFilters;
         private bool _applyChange;
 
-        public Program(string solutionFilePath, bool applyChange)
+        public Program(string solutionFilePath, bool applyChange, List<string> filenameFilters, List<string> includeFilters)
         {
             Log("SolutionFile: " + solutionFilePath);
+
             _applyChange = applyChange;
             Log("ApplyChange: " + _applyChange);
 
+            _filenameFilters = filenameFilters;
+            foreach (string filter in _filenameFilters)
+            {
+                Log("Ignore file: " + filter);
+            }
+
+            _includeFilters = includeFilters;
+            foreach (string filter in _includeFilters)
+            {
+                Log("Ignore include: " + filter);
+            }
+
             _builder = new Builder(solutionFilePath);
             _fileLogger = File.CreateText("CppIncludeChecker.log");
-
-            _filenameFilters.Add("stdafx.cpp");
-
-            _includeFilters.Add("stdafx.h");
         }
 
         public void Dispose()
@@ -265,7 +274,7 @@ namespace CppIncludeChecker
         {
             if (args.Length < 1)
             {
-                Console.WriteLine("Usage: {0} SolutionFilePath [--applychange]", Environment.CommandLine);
+                Console.WriteLine("Usage: {0} SolutionFilePath [--applychange] [--ignoreselfheaderinclude] [--filenamefilter:xxxx.xxx]* [--includefilter:xxxx.h]*", Environment.CommandLine);
                 return;
             }
             string solutionFilePath = args[0];
@@ -275,11 +284,36 @@ namespace CppIncludeChecker
                 return;
             }
             bool applyChange = false;
-            if (args.Length == 2 && args[1] == "--applychange")
+            bool ignoreSelfHeaderInclude = false;
+            List<string> filenameFilters = new List<string>();
+            List<string> includeFilters = new List<string>();
+            foreach (string arg in args)
             {
-                applyChange = true;
+                if (arg.StartsWith("--") == false)
+                {
+                    continue;
+                }
+                if (arg == "--applychange")
+                {
+                    applyChange = true;
+                    continue;
+                }
+                string testString = "";
+
+                testString = "--filenamefilter:";
+                if (arg.StartsWith(testString))
+                {
+                    filenameFilters.Add(arg.Substring(testString.Length));
+                    continue;
+                }
+                testString = "--includefilter:";
+                if (arg.StartsWith(testString))
+                {
+                    includeFilters.Add(arg.Substring(testString.Length));
+                    continue;
+                }
             }
-            using (Program program = new Program(solutionFilePath, applyChange))
+            using (Program program = new Program(solutionFilePath, applyChange, filenameFilters, includeFilters))
             {
                 program.Check();
             }
