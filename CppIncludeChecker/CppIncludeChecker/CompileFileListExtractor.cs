@@ -1,8 +1,9 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using System.Text;
+using System.Xml;
 
 namespace CppIncludeChecker
 {
@@ -28,36 +29,43 @@ namespace CppIncludeChecker
                     if (match.Success)
                     {
                         projectFileFullPath = match.Groups[1].Value;
+                        Debug.Assert(File.Exists(projectFileFullPath));
+                        string projectFileContent = File.ReadAllText(projectFileFullPath);
+
+                        filenames.AddRange(MakeFullPathAndVerify(projectFileFullPath, ExtractHeaderFilesFromProjectFileContent(projectFileContent)));
                     }
                     if (string.IsNullOrEmpty(projectFileFullPath))
                     {
                         continue;
                     }
-                    var extractedFilenames = ExtractFileFromLine(line);
-                    if (extractedFilenames.Count > 0)
-                    {
-                        foreach (string filename in extractedFilenames)
-                        {
-                            string projectFileDirectoryPath = Path.GetDirectoryName(projectFileFullPath);
-                            string fullpath = Path.GetFullPath(Path.Combine(projectFileDirectoryPath, filename));
-                            if (File.Exists(fullpath))
-                            {
-                                filenames.Add(fullpath);
-                            }
-                            else
-                            {
-                                string errorLog = "Cannot find file:" + fullpath;
-                                System.Diagnostics.Debug.WriteLine(errorLog);
-                                System.Console.WriteLine(errorLog);
-                            }
-                        }
-                    }
+                    filenames.AddRange(MakeFullPathAndVerify(projectFileFullPath, ExtractCompileFileFromLine(line)));
                 }
             }
             return filenames;
         }
 
-        private List<string> ExtractFileFromLine (string line)
+        private List<string> MakeFullPathAndVerify(string projectFileFullPath, List<string> filenames)
+        {
+            List<string> output = new List<string>();
+            foreach (string filename in filenames)
+            {
+                string projectFileDirectoryPath = Path.GetDirectoryName(projectFileFullPath);
+                string fullpath = Path.GetFullPath(Path.Combine(projectFileDirectoryPath, filename));
+                if (File.Exists(fullpath))
+                {
+                    output.Add(fullpath);
+                }
+                else
+                {
+                    string errorLog = "Cannot find file:" + fullpath;
+                    Debug.WriteLine(errorLog);
+                    Console.WriteLine(errorLog);
+                }
+            }
+            return output;
+        }
+
+        private List<string> ExtractCompileFileFromLine (string line)
         {
             List<string> output = new List<string>();
             var match = Regex.Match(line, "errorReport:queue (.*)$");
@@ -68,6 +76,21 @@ namespace CppIncludeChecker
                 {
                     output.Add(file);
                 }
+            }
+            return output;
+        }
+
+        public static List<string> ExtractHeaderFilesFromProjectFileContent(string projectFileContent)
+        {
+            List<string> output = new List<string>();
+
+            XmlDocument document = new XmlDocument();
+            document.LoadXml(projectFileContent);
+
+            XmlNodeList includeNodes = document.GetElementsByTagName("ClInclude");
+            foreach (XmlNode node in includeNodes)
+            {
+               output.Add(node.Attributes["Include"].Value);
             }
             return output;
         }
