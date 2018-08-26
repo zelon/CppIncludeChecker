@@ -58,7 +58,7 @@ namespace CppIncludeChecker
 
         public static string RemoveIncludeLine(string input, string include)
         {
-            string pattern = string.Format("{0}.*\n", include);
+            string pattern = string.Format("{0}.*\n", Regex.Escape(include));
             return Regex.Replace(input, pattern, "");
         }
     }
