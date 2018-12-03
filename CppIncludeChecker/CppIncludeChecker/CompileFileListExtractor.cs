@@ -32,13 +32,15 @@ namespace CppIncludeChecker
                         Debug.Assert(File.Exists(projectFileFullPath));
                         string projectFileContent = File.ReadAllText(projectFileFullPath);
 
-                        filenames.AddRange(MakeFullPathAndVerify(projectFileFullPath, ExtractHeaderFilesFromProjectFileContent(projectFileContent)));
+                        var filenamesFromProject = ExtractHeaderFilesFromProjectFileContent(projectFileContent);
+                        filenames.AddRange(MakeFullPathAndVerify(projectFileFullPath, filenamesFromProject));
                     }
                     if (string.IsNullOrEmpty(projectFileFullPath))
                     {
                         continue;
                     }
-                    filenames.AddRange(MakeFullPathAndVerify(projectFileFullPath, ExtractCompileFileFromLine(line)));
+                    var filenamesFromLine = ExtractCompileFileFromLine(line);
+                    filenames.AddRange(MakeFullPathAndVerify(projectFileFullPath, filenamesFromLine));
                 }
             }
             return filenames;
