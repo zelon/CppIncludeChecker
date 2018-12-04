@@ -1,48 +1,48 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 
 namespace CppIncludeChecker
 {
-    class Program : IDisposable
+    class MainProcess : IDisposable
     {
         private Builder _builder;
-        private TextWriter _fileLogger;
-        private List<FileModifier> _appliedFileModifiers = new List<FileModifier>();
-        private List<string> _filenameFilters;
-        private List<string> _includeFilters;
-        private bool _applyChange;
+		private Logger _logger;
+		private List<FileModifier> _appliedFileModifiers = new List<FileModifier>();
+        private readonly List<string> _filenameFilters;
+        private readonly List<string> _includeFilters;
+        private readonly bool _applyChange;
 
-        public Program(string solutionFilePath, bool applyChange, List<string> filenameFilters, List<string> includeFilters)
+        public MainProcess(string solutionFilePath, bool applyChange, List<string> filenameFilters, List<string> includeFilters)
         {
-            Log("SolutionFile: " + solutionFilePath);
-
             _applyChange = applyChange;
-            Log("ApplyChange: " + _applyChange);
-
             _filenameFilters = filenameFilters;
-            foreach (string filter in _filenameFilters)
-            {
-                Log("Ignore file: " + filter);
-            }
-
             _includeFilters = includeFilters;
-            foreach (string filter in _includeFilters)
-            {
-                Log("Ignore include: " + filter);
-            }
-
             _builder = new Builder(solutionFilePath);
-            _fileLogger = File.CreateText("CppIncludeChecker.log");
+            _logger = new Logger("CppIncludeChecker.log");
+
+			PrintSetting(solutionFilePath);
         }
 
         public void Dispose()
         {
-            _fileLogger.Close();
+            _logger.Dispose();
         }
 
-        public void Check()
+		private void PrintSetting(string solutionFilePath)
+		{
+			_logger.Log("SolutionFile: " + solutionFilePath);
+			_logger.Log("ApplyChange: " + _applyChange);
+			foreach (string filter in _filenameFilters)
+			{
+				_logger.Log("Ignore file: " + filter);
+			}
+			foreach (string filter in _includeFilters)
+			{
+				_logger.Log("Ignore include: " + filter);
+			}
+		}
+
+		public void Start()
         {
             Builder.BuildResult startBuildResult = RebuildAtStart();
             if (startBuildResult.IsSuccess == false)
@@ -53,13 +53,13 @@ namespace CppIncludeChecker
             filenames = FilterOutByFilename(filenames);
             if (filenames.Count <= 0)
             {
-                Log("Cannot extract any file");
+				_logger.Log("Cannot extract any file");
                 return;
             }
             int changedCount = TryRemoveIncludeAndCollectChanges(filenames);
             if (changedCount <= 0)
             {
-                Log("There is no needless include. Good!!");
+				_logger.Log("There is no needless include. Good!!");
                 return;
             }
 
@@ -73,25 +73,25 @@ namespace CppIncludeChecker
             if (_applyChange == false)
             {
                 RevertAll();
-                Log("All test changes has been reverted");
+				_logger.Log("All test changes has been reverted");
             }
             else
             {
-                Log("All test changes has been applied");
+				_logger.Log("All test changes has been applied");
             }
         }
 
         private Builder.BuildResult RebuildAtStart()
         {
-            Log("Start of StartRebuild");
+			_logger.Log("Start of StartRebuild");
             Builder.BuildResult buildResult = _builder.Rebuild();
-            Log("End of StartRebuild");
+			_logger.Log("End of StartRebuild");
             if (buildResult.IsSuccess == false || buildResult.errors.Count > 0)
             {
-                Log("There are errors of StartRebuild", buildResult.outputs, buildResult.errors);
+				_logger.Log("There are errors of StartRebuild", buildResult.outputs, buildResult.errors);
                 return buildResult;
             }
-            LogToFile("=== StartRebuild result ===", buildResult.outputs);
+            _logger.LogToFile("=== StartRebuild result ===", buildResult.outputs);
             return buildResult;
         }
 
@@ -128,7 +128,7 @@ namespace CppIncludeChecker
             ChangeMaker changeMaker = new ChangeMaker();
             foreach (string filename in filenames)
             {
-                Log("Checking " + filename);
+				_logger.Log("Checking " + filename);
                 FileModifier fileModifier = new FileModifier(filename);
                 List<string> changeCandidates = changeMaker.AnalyzeIncludeLines(fileModifier.OriginalContent);
                 changeCandidates = FilterOutByInclude(changeCandidates);
@@ -145,18 +145,14 @@ namespace CppIncludeChecker
                     {
                         successfulChanges.Add(removeString);
                     }
-                    LogToFile(string.Format("=== {0}:{1} build result ===", filename, removeString), testBuildResult.outputs);
+                    _logger.LogToFile(string.Format("=== {0}:{1} build result ===", filename, removeString), testBuildResult.outputs);
                     fileModifier.RevertAndWrite();
                 }
                 if (successfulChanges.Count > 0)
                 {
                     foreach (string success in successfulChanges)
                     {
-                        ChangeInfo changeInfo = new ChangeInfo() {
-                            Filename = filename,
-                            RemoveString = success
-                        };
-                        Log(string.Format("MarkedInclude:{0}:{1}", changeInfo.Filename, changeInfo.RemoveString));
+						_logger.Log(string.Format("MarkedInclude:{0}:{1}", filename, success));
                     }
                     fileModifier.RemoveAndWrite(successfulChanges);
                     _appliedFileModifiers.Add(fileModifier);
@@ -189,17 +185,17 @@ namespace CppIncludeChecker
 
         private Builder.BuildResult RebuildAtLast()
         {
-            Log("Start of LastRebuild");
+			_logger.Log("Start of LastRebuild");
             var lastRebuildResult = _builder.Rebuild();
-            Log("End of LastRebuild");
-            LogToFile("=== LastRebuild result ===", lastRebuildResult.outputs);
+			_logger.Log("End of LastRebuild");
+            _logger.LogToFile("=== LastRebuild result ===", lastRebuildResult.outputs);
             if (lastRebuildResult.IsSuccess)
             {
-                Log("LastRebuild is successful");
+				_logger.Log("LastRebuild is successful");
             }
             else
             {
-                Log("LastRebuild is failed");
+				_logger.Log("LastRebuild is failed");
             }
             return lastRebuildResult;
         }
@@ -210,58 +206,9 @@ namespace CppIncludeChecker
             {
                 foreach (string removedString in fileModifier.RemovedStrings)
                 {
-                    Log(string.Format("NeedlessInclude:{0}:{1}", fileModifier.Filename, removedString));
+					_logger.Log(string.Format("NeedlessInclude:{0}:{1}", fileModifier.Filename, removedString));
                 }
             }
-        }
-
-        void Log(string text, List<string> outputs = null, List<string> errors = null)
-        {
-            text = string.Format("{0}: {1}", DateTime.Now.ToLongTimeString(), text);
-
-            Console.WriteLine(text);
-            Debug.WriteLine(text);
-            if (outputs != null)
-            {
-                foreach (string line in outputs)
-                {
-                    Console.WriteLine(line);
-                    Debug.WriteLine(line);
-                }
-            }
-            if (errors != null)
-            {
-                foreach (string line in errors)
-                {
-                    Console.WriteLine(line);
-                    Debug.WriteLine(line);
-                }
-            }
-        }
-
-        void LogToFile(string text, List<string> outputs = null, List<string> errors = null)
-        {
-            _fileLogger.WriteLine(text);
-            if (outputs != null)
-            {
-                foreach (string line in outputs)
-                {
-                    _fileLogger.WriteLine(line);
-                }
-            }
-            if (errors != null)
-            {
-                foreach (string line in errors)
-                {
-                    _fileLogger.WriteLine(line);
-                }
-            }
-        }
-
-        class ChangeInfo
-        {
-            public string Filename { get; set; }
-            public string RemoveString { get; set; }
         }
 
         private void RevertAll()
@@ -269,55 +216,6 @@ namespace CppIncludeChecker
             foreach (var fileModifier in _appliedFileModifiers)
             {
                 fileModifier.RevertAndWrite();
-            }
-        }
-
-        static void Main(string[] args)
-        {
-            if (args.Length < 1)
-            {
-                Console.WriteLine("Usage: {0} SolutionFilePath [--applychange] [--ignoreselfheaderinclude] [--filenamefilter:xxxx.xxx]* [--includefilter:xxxx.h]*", Environment.CommandLine);
-                return;
-            }
-            string solutionFilePath = args[0];
-            if (File.Exists(solutionFilePath) == false)
-            {
-                Console.WriteLine("Cannot find the solution file:{0}", solutionFilePath);
-                return;
-            }
-            bool applyChange = false;
-            bool ignoreSelfHeaderInclude = false;
-            List<string> filenameFilters = new List<string>();
-            List<string> includeFilters = new List<string>();
-            foreach (string arg in args)
-            {
-                if (arg.StartsWith("--") == false)
-                {
-                    continue;
-                }
-                if (arg == "--applychange")
-                {
-                    applyChange = true;
-                    continue;
-                }
-                string testString = "";
-
-                testString = "--filenamefilter:";
-                if (arg.StartsWith(testString))
-                {
-                    filenameFilters.Add(arg.Substring(testString.Length));
-                    continue;
-                }
-                testString = "--includefilter:";
-                if (arg.StartsWith(testString))
-                {
-                    includeFilters.Add(arg.Substring(testString.Length));
-                    continue;
-                }
-            }
-            using (Program program = new Program(solutionFilePath, applyChange, filenameFilters, includeFilters))
-            {
-                program.Check();
             }
         }
     }
