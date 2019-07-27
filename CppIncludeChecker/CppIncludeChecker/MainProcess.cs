@@ -34,7 +34,7 @@ namespace CppIncludeChecker
             }
             NeedlessIncludeLines needlessIncludeLines = TryRemoveIncludeAndCollectChanges(sourceFilenames);
             _logger.LogSeperateLine();
-            if (needlessIncludeLines.IsEmpty())
+            if (needlessIncludeLines.IncludeLineInfos.Count == 0)
             {
 				_logger.Log("There is no needless include. Nice project!!!!!!!!!!!");
                 return;
@@ -92,8 +92,15 @@ namespace CppIncludeChecker
         private NeedlessIncludeLines TryRemoveIncludeAndCollectChanges(SortedSet<string> filenames)
         {
             NeedlessIncludeLines needlessIncludeLines = new NeedlessIncludeLines();
+            int checkedFileCount = 0;
             foreach (string filename in filenames)
             {
+                if (checkedFileCount > _config.MaxCheckFileCount)
+                {
+                    _logger.Log("Reached maxcheckfilecount,count: " + _config.MaxCheckFileCount);
+                    break;
+                }
+                ++checkedFileCount;
                 FileModifier fileModifier = new FileModifier(filename);
                 List<string> includeLines = IncludeLineAnalyzer.Analyze(fileModifier.OriginalContent);
                 includeLines = Util.FilterOut(includeLines, _config.IncludeFilters);
@@ -121,6 +128,11 @@ namespace CppIncludeChecker
                     }
                     _logger.LogToFile(string.Format("=== {0}:{1} build result ===", filename, includeLine), testBuildResult.outputs);
                     fileModifier.RevertAndWrite();
+                    if (needlessIncludeLines.IncludeLineInfos.Count >= _config.MaxSuccessRemoveCount)
+                    {
+                        _logger.Log("Reached maxsuccessremovecount,count: " + _config.MaxSuccessRemoveCount);
+                        return needlessIncludeLines;
+                    }
                 }
             }
             return needlessIncludeLines;

@@ -28,32 +28,6 @@ namespace CppIncludeChecker
             });
         }
 
-        public void ApplyAll(Logger logger, string execCmdPath)
-        {
-
-        }
-
-        public void ExecAll(Logger logger, string execCmdPath)
-        {
-            Debug.Assert(string.IsNullOrEmpty(execCmdPath) == false);
-            Debug.Assert(File.Exists(execCmdPath));
-
-            foreach (var info in IncludeLineInfos)
-            {
-                string filename = info.Filename;
-                string includeLine = info.IncludeLine;
-                string argument = string.Format(@"""{0}"" ""{1}""", filename, includeLine);
-                var runResult = CommandExecutor.Run(".", execCmdPath, argument);
-                logger.Log("----------------------------------------------------",
-                    runResult.outputs, runResult.errors);
-            }
-        }
-
-        public bool IsEmpty()
-        {
-            return IncludeLineInfos.Count == 0;
-        }
-
         public void Print(Logger logger)
         {
             foreach (var info in IncludeLineInfos)

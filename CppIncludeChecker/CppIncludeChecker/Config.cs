@@ -11,6 +11,8 @@ namespace CppIncludeChecker
         public bool ApplyChange { get; set; }
         public string ExecCmdPath { get; set; }
         public bool IgnoreSelfHeaderInclude { get; set; }
+        public int? MaxCheckFileCount { get; set; }
+        public int? MaxSuccessRemoveCount { get; set; }
         public List<string> FilenameFilters { get; set; }
         public List<string> IncludeFilters { get; set; }
 
@@ -29,6 +31,8 @@ namespace CppIncludeChecker
             logger.Log("ApplyChange: " + ApplyChange);
             logger.Log("ExecCmdPath: " + ExecCmdPath);
             logger.Log("IgnoreSelfHeaderInclude: " + IgnoreSelfHeaderInclude);
+            logger.Log("MaxCheckFileCount: " + MaxCheckFileCount);
+            logger.Log("MaxSuccessRemoveCount: " + MaxSuccessRemoveCount);
             foreach (string filter in FilenameFilters)
             {
                 logger.Log("IgnoreFileFilter: " + filter);
@@ -78,6 +82,18 @@ namespace CppIncludeChecker
                 if (arg.StartsWith(testString))
                 {
                     config.MsBuildCmdPath = arg.Substring(testString.Length);
+                    continue;
+                }
+                testString = "--maxcheckfilecount:";
+                if (arg.StartsWith(testString))
+                {
+                    config.MaxCheckFileCount = int.Parse(arg.Substring(testString.Length));
+                    continue;
+                }
+                testString = "--maxsucessremovecount:";
+                if (arg.StartsWith(testString))
+                {
+                    config.MaxSuccessRemoveCount = int.Parse(arg.Substring(testString.Length));
                     continue;
                 }
                 testString = "--filenamefilter:";
