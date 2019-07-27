@@ -52,13 +52,26 @@ namespace CppIncludeChecker
             needlessIncludeLines.Print(_logger);
 
             _logger.LogSeperateLine();
-            if (_config.ApplyChange)
+
+            foreach (var info in needlessIncludeLines.IncludeLineInfos)
             {
-                _logger.Log("All test changes has been applied");
-            }
-            else
-            {
-                _logger.Log("Starting apply changes");
+                string filename = info.Filename;
+                string includeLine = info.IncludeLine;
+
+                if (string.IsNullOrEmpty(_config.ExecCmdPath) == false)
+                {
+                    _logger.Log(string.Format("Executing {0}:{1}", filename, includeLine));
+                    string argument = string.Format(@"""{0}"" ""{1}""", filename, includeLine);
+                    var runResult = CommandExecutor.Run(".", _config.ExecCmdPath, argument);
+                    _logger.Log("----------------------------------------------------",
+                        runResult.outputs, runResult.errors);
+                }
+                if (_config.ApplyChange)
+                {
+                    _logger.Log(string.Format("Applying {0}:{1}", filename, includeLine));
+                    FileModifier fileModifier = new FileModifier(filename);
+                    fileModifier.RemoveAndWrite(includeLine);
+                }
             }
         }
 
@@ -98,13 +111,13 @@ namespace CppIncludeChecker
                     var testBuildResult = _builder.Build();
                     if (testBuildResult.IsSuccess)
                     {
-                        _logger.Log(string.Format(" ({0} testing build time) ----> Result: [[[[[[CAN BE REMOVED]]]]]]", testBuildResult.GetBuildDurationString()));
+                        _logger.Log(string.Format(" ({0} testing build time) ----> [[[[[[CAN BE REMOVED]]]]]]", testBuildResult.GetBuildDurationString()));
                         successfulRemovingTestOkIncludeLines.Add(includeLine);
                         needlessIncludeLines.Add(filename, includeLine);
                     }
                     else
                     {
-                        _logger.Log(string.Format(" ({0} testing build time) ----> Result: [CANNOT BE REMOVED]", testBuildResult.GetBuildDurationString()));
+                        _logger.Log(string.Format(" ({0} testing build time) ----> Cannot be removed", testBuildResult.GetBuildDurationString()));
                     }
                     _logger.LogToFile(string.Format("=== {0}:{1} build result ===", filename, includeLine), testBuildResult.outputs);
                     fileModifier.RevertAndWrite();

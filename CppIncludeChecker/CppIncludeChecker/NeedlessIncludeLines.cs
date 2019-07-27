@@ -1,41 +1,62 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 
 namespace CppIncludeChecker
 {
     public class NeedlessIncludeLines
     {
-        struct IncludeLineInfo
+        public struct IncludeLineInfo
         {
             public string Filename { get; set; }
             public string IncludeLine { get; set; }
         }
 
-        private List<IncludeLineInfo> includeLineInfos;
+        public List<IncludeLineInfo> IncludeLineInfos { get; private set; }
 
         public NeedlessIncludeLines()
         {
-            includeLineInfos = new List<IncludeLineInfo>();
+            IncludeLineInfos = new List<IncludeLineInfo>();
         }
 
         public void Add(string filename, string includeLine)
         {
-            includeLineInfos.Add(new IncludeLineInfo
+            IncludeLineInfos.Add(new IncludeLineInfo
             {
                 Filename = filename,
                 IncludeLine = includeLine
             });
         }
 
+        public void ApplyAll(Logger logger, string execCmdPath)
+        {
+
+        }
+
+        public void ExecAll(Logger logger, string execCmdPath)
+        {
+            Debug.Assert(string.IsNullOrEmpty(execCmdPath) == false);
+            Debug.Assert(File.Exists(execCmdPath));
+
+            foreach (var info in IncludeLineInfos)
+            {
+                string filename = info.Filename;
+                string includeLine = info.IncludeLine;
+                string argument = string.Format(@"""{0}"" ""{1}""", filename, includeLine);
+                var runResult = CommandExecutor.Run(".", execCmdPath, argument);
+                logger.Log("----------------------------------------------------",
+                    runResult.outputs, runResult.errors);
+            }
+        }
+
         public bool IsEmpty()
         {
-            return includeLineInfos.Count == 0;
+            return IncludeLineInfos.Count == 0;
         }
 
         public void Print(Logger logger)
         {
-            foreach (var info in includeLineInfos)
+            foreach (var info in IncludeLineInfos)
             {
                 logger.Log(string.Format("Found needless include line:{0}:{1}", info.Filename, info.IncludeLine));
             }

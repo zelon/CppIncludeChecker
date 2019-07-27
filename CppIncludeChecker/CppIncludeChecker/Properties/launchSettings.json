@@ -2,7 +2,7 @@
   "profiles": {
     "CppIncludeChecker": {
       "commandName": "Project",
-      "commandLineArgs": "$(SolutionDir)..\\TestCppSolution\\TestCppSolution.sln --msbuildenvpath:\"C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Professional\\Common7\\Tools\\VsMSBuildCmd.bat\" --filenamefilter:stdafx.cpp --filenamefilter:gtest --includefilter:stdafx.h"
+      "commandLineArgs": "$(SolutionDir)..\\TestCppSolution\\TestCppSolution.sln --msbuildenvpath:\"C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Professional\\Common7\\Tools\\VsMSBuildCmd.bat\" --exec:\"C:\\git\\CppIncludeChecker\\CppIncludeChecker\\TestExecCmd.bat\" --filenamefilter:stdafx.cpp --filenamefilter:gtest --includefilter:stdafx.h"
     }
   }
 }

@@ -9,6 +9,7 @@ namespace CppIncludeChecker
         public string MsBuildCmdPath { get; set; }
         public string SolutionFilePath { get; set; }
         public bool ApplyChange { get; set; }
+        public string ExecCmdPath { get; set; }
         public bool IgnoreSelfHeaderInclude { get; set; }
         public List<string> FilenameFilters { get; set; }
         public List<string> IncludeFilters { get; set; }
@@ -26,6 +27,7 @@ namespace CppIncludeChecker
             logger.Log("SolutionFile: " + SolutionFilePath);
             logger.Log("MsBuildCmdPath: " + MsBuildCmdPath);
             logger.Log("ApplyChange: " + ApplyChange);
+            logger.Log("ExecCmdPath: " + ExecCmdPath);
             logger.Log("IgnoreSelfHeaderInclude: " + IgnoreSelfHeaderInclude);
             foreach (string filter in FilenameFilters)
             {
@@ -66,6 +68,12 @@ namespace CppIncludeChecker
                 }
                 string testString = "";
 
+                testString = "--exec:";
+                if (arg.StartsWith(testString))
+                {
+                    config.ExecCmdPath = arg.Substring(testString.Length);
+                    continue;
+                }
                 testString = "--msbuildenvpath:";
                 if (arg.StartsWith(testString))
                 {
@@ -91,12 +99,20 @@ namespace CppIncludeChecker
                 PrintUsage();
                 return null;
             }
+            if (string.IsNullOrEmpty(config.ExecCmdPath) == false)
+            {
+                if (File.Exists(config.ExecCmdPath) == false)
+                {
+                    Console.WriteLine("Cannot find exec: " + config.ExecCmdPath);
+                    return null;
+                }
+            }
             return config;
         }
 
         public static void PrintUsage()
         {
-            Console.WriteLine(@"Usage: {0} SolutionFilePath --msbuildenvpath:""C:\Program Files(x86)\Microsoft Visual Studio\2017\Professional\Common7\Tools\VsMSBuildCmd.bat"" [--applychange] [--ignoreselfheaderinclude] [--filenamefilter:xxxx.xxx]* [--includefilter:xxxx.h]*", Environment.CommandLine);
+            Console.WriteLine(@"Usage: {0} SolutionFilePath --msbuildenvpath:""C:\Program Files(x86)\Microsoft Visual Studio\2017\Professional\Common7\Tools\VsMSBuildCmd.bat"" [--applychange] [--exec:""C:\Test\make_patch.bat""] [--ignoreselfheaderinclude] [--filenamefilter:xxxx.xxx]* [--includefilter:xxxx.h]*", Environment.CommandLine);
         }
     }
 }
