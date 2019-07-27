@@ -25,5 +25,27 @@ namespace CppIncludeChecker
             }
             return output;
         }
+
+        public static SortedSet<string> FilterOut(SortedSet<string> sources, List<string> by)
+        {
+            SortedSet<string> output = new SortedSet<string>();
+            foreach (string include in sources)
+            {
+                bool isInFilter = false;
+                foreach (string filter in by)
+                {
+                    if (include.Contains(filter))
+                    {
+                        isInFilter = true;
+                        break;
+                    }
+                }
+                if (isInFilter == false)
+                {
+                    output.Add(include);
+                }
+            }
+            return output;
+        }
     }
 }

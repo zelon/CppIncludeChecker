@@ -88,9 +88,9 @@ Build succeeded.
             }
             var fileList = CompileFileListExtractor.GetFilenames(outputs);
 
-            Assert.IsTrue(fileList.Exists((filename) => filename == string.Format(@"{0}\TestCppSolution\SubDirectory\Module1.cpp", testCppSolutionDirectory)));
-            Assert.IsTrue(fileList.Exists((filename) => filename == string.Format(@"{0}\Module2.cpp", testCppSolutionDirectory)));
-            Assert.IsTrue(fileList.Exists((filename) => filename == string.Format(@"{0}\TestCppSolution\TestCppSolution.cpp", testCppSolutionDirectory)));
+            Assert.IsTrue(fileList.Contains(string.Format(@"{0}\TestCppSolution\SubDirectory\Module1.cpp", testCppSolutionDirectory)));
+            Assert.IsTrue(fileList.Contains(string.Format(@"{0}\Module2.cpp", testCppSolutionDirectory)));
+            Assert.IsTrue(fileList.Contains(string.Format(@"{0}\TestCppSolution\TestCppSolution.cpp", testCppSolutionDirectory)));
         }
 
         [TestMethod]

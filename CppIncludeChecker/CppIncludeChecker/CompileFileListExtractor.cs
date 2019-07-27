@@ -9,9 +9,9 @@ namespace CppIncludeChecker
 {
     public class CompileFileListExtractor
     {
-        public static List<string> GetFilenames(List<string> outputs)
+        public static SortedSet<string> GetFilenames(List<string> outputs)
         {
-            List<string> filenames = new List<string>();
+            SortedSet<string> filenames = new SortedSet<string>();
             var logsByNode = CollectLogByNode(outputs);
             foreach (List<string> lines in logsByNode.Values)
             {
@@ -26,22 +26,22 @@ namespace CppIncludeChecker
                         string projectFileContent = File.ReadAllText(projectFileFullPath);
 
                         var filenamesFromProject = ExtractHeaderFilesFromProjectFileContent(projectFileContent);
-                        filenames.AddRange(MakeFullPathAndVerify(projectFileFullPath, filenamesFromProject));
+                        filenames.UnionWith(MakeFullPathAndVerify(projectFileFullPath, filenamesFromProject));
                     }
                     if (string.IsNullOrEmpty(projectFileFullPath))
                     {
                         continue;
                     }
                     var filenamesFromLine = ExtractCompileFileFromLine(line);
-                    filenames.AddRange(MakeFullPathAndVerify(projectFileFullPath, filenamesFromLine));
+                    filenames.UnionWith(MakeFullPathAndVerify(projectFileFullPath, filenamesFromLine));
                 }
             }
             return filenames;
         }
 
-        private static List<string> MakeFullPathAndVerify(string projectFileFullPath, List<string> filenames)
+        private static SortedSet<string> MakeFullPathAndVerify(string projectFileFullPath, List<string> filenames)
         {
-            List<string> output = new List<string>();
+            SortedSet<string> output = new SortedSet<string>();
             foreach (string filename in filenames)
             {
                 string projectFileDirectoryPath = Path.GetDirectoryName(projectFileFullPath);

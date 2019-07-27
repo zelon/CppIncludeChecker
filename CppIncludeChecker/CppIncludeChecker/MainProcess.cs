@@ -25,7 +25,7 @@ namespace CppIncludeChecker
                 return;
             }
             _logger.LogSeperateLine();
-            List<string> sourceFilenames = CompileFileListExtractor.GetFilenames(startBuildResult.outputs);
+            SortedSet<string> sourceFilenames = CompileFileListExtractor.GetFilenames(startBuildResult.outputs);
             sourceFilenames = Util.FilterOut(sourceFilenames, _config.FilenameFilters);
             if (sourceFilenames.Count <= 0)
             {
@@ -54,11 +54,11 @@ namespace CppIncludeChecker
             _logger.LogSeperateLine();
             if (_config.ApplyChange)
             {
-				_logger.Log("Starting apply changes");
+                _logger.Log("All test changes has been applied");
             }
             else
             {
-				_logger.Log("All test changes has been applied");
+                _logger.Log("Starting apply changes");
             }
         }
 
@@ -76,7 +76,7 @@ namespace CppIncludeChecker
             return buildResult;
         }
 
-        private NeedlessIncludeLines TryRemoveIncludeAndCollectChanges(List<string> filenames)
+        private NeedlessIncludeLines TryRemoveIncludeAndCollectChanges(SortedSet<string> filenames)
         {
             NeedlessIncludeLines needlessIncludeLines = new NeedlessIncludeLines();
             foreach (string filename in filenames)
