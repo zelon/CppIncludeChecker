@@ -2,7 +2,7 @@
   "profiles": {
     "CppIncludeChecker": {
       "commandName": "Project",
-      "commandLineArgs": "E:\\git\\CppIncludeChecker\\TestCppSolution\\TestCppSolution.sln --filenamefilter:stdafx.cpp --filenamefilter:gtest --includefilter:stdafx.h"
+      "commandLineArgs": "$(SolutionDir)..\\TestCppSolution\\TestCppSolution.sln --filenamefilter:stdafx.cpp --filenamefilter:gtest --includefilter:stdafx.h"
     }
   }
 }
