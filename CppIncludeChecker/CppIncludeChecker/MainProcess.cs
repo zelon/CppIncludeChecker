@@ -25,7 +25,7 @@ namespace CppIncludeChecker
                 return;
             }
             List<string> filenames = ExtractFilenameList(startBuildResult.outputs);
-            filenames = FilterOutByFilename(filenames);
+            filenames = Util.FilterOut(filenames, _config.FilenameFilters);
             if (filenames.Count <= 0)
             {
 				_logger.Log("Cannot extract any file");
@@ -76,28 +76,6 @@ namespace CppIncludeChecker
             return compileFileListExtractor.GetFilenames();
         }
 
-        private List<string> FilterOutByFilename(List<string> filenames)
-        {
-            List<string> outFilenames = new List<string>();
-            foreach (string filename in filenames)
-            {
-                bool isInFilter = false;
-                foreach (string filterFilename in _config.FilenameFilters)
-                {
-                    if (filename.Contains(filterFilename))
-                    {
-                        isInFilter = true;
-                        break;
-                    }
-                }
-                if (isInFilter == false)
-                {
-                    outFilenames.Add(filename);
-                }
-            }
-            return outFilenames;
-        }
-
         private int TryRemoveIncludeAndCollectChanges(List<string> filenames)
         {
             ChangeMaker changeMaker = new ChangeMaker();
@@ -106,7 +84,7 @@ namespace CppIncludeChecker
 				_logger.Log("Checking " + filename);
                 FileModifier fileModifier = new FileModifier(filename);
                 List<string> changeCandidates = changeMaker.AnalyzeIncludeLines(fileModifier.OriginalContent);
-                changeCandidates = FilterOutByInclude(changeCandidates);
+                changeCandidates = Util.FilterOut(changeCandidates, _config.IncludeFilters);
                 if (changeCandidates.Count <= 0)
                 {
                     continue;
@@ -134,28 +112,6 @@ namespace CppIncludeChecker
                 }
             }
             return _appliedFileModifiers.Count;
-        }
-
-        private List<string> FilterOutByInclude(List<string> includes)
-        {
-            List<string> outIncludeList = new List<string>();
-            foreach (string include in includes)
-            {
-                bool isInFilter = false;
-                foreach (string filter in _config.IncludeFilters)
-                {
-                    if (include.Contains(filter))
-                    {
-                        isInFilter = true;
-                        break;
-                    }
-                }
-                if (isInFilter == false)
-                {
-                    outIncludeList.Add(include);
-                }
-            }
-            return outIncludeList;
         }
 
         private Builder.BuildResult RebuildAtLast()
