@@ -24,14 +24,14 @@ namespace CppIncludeChecker
             {
                 return;
             }
-            List<string> filenames = ExtractFilenameList(startBuildResult.outputs);
-            filenames = Util.FilterOut(filenames, _config.FilenameFilters);
-            if (filenames.Count <= 0)
+            List<string> sourceFilenames = CompileFileListExtractor.GetFilenames(startBuildResult.outputs);
+            sourceFilenames = Util.FilterOut(sourceFilenames, _config.FilenameFilters);
+            if (sourceFilenames.Count <= 0)
             {
 				_logger.Log("Cannot extract any file");
                 return;
             }
-            int changedCount = TryRemoveIncludeAndCollectChanges(filenames);
+            int changedCount = TryRemoveIncludeAndCollectChanges(sourceFilenames);
             if (changedCount <= 0)
             {
 				_logger.Log("There is no needless include. Good!!");
@@ -68,12 +68,6 @@ namespace CppIncludeChecker
             }
             _logger.LogToFile("=== StartRebuild result ===", buildResult.outputs);
             return buildResult;
-        }
-
-        private List<string> ExtractFilenameList(List<string> outputs)
-        {
-            CompileFileListExtractor compileFileListExtractor = new CompileFileListExtractor(outputs);
-            return compileFileListExtractor.GetFilenames();
         }
 
         private int TryRemoveIncludeAndCollectChanges(List<string> filenames)

@@ -79,7 +79,7 @@ Build succeeded.
             {
                 outputs.Add(line);
             }
-            var fileList = new CompileFileListExtractor(outputs).GetFilenames();
+            var fileList = CompileFileListExtractor.GetFilenames(outputs);
             Assert.IsTrue(fileList.Exists((filename) => filename == @"E:\git\CppIncludeChecker\TestCppSolution\TestCppSolution\SubDirectory\Module1.cpp"));
             Assert.IsTrue(fileList.Exists((filename) => filename == @"E:\git\CppIncludeChecker\TestCppSolution\Module2.cpp"));
             Assert.IsTrue(fileList.Exists((filename) => filename == @"E:\git\CppIncludeChecker\TestCppSolution\TestCppSolution\TestCppSolution.cpp"));

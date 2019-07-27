@@ -9,17 +9,10 @@ namespace CppIncludeChecker
 {
     public class CompileFileListExtractor
     {
-        private List<string> _outputs;
-
-        public CompileFileListExtractor(List<string> outputs)
-        {
-            _outputs = outputs;
-        }
-
-        public List<string> GetFilenames()
+        public static List<string> GetFilenames(List<string> outputs)
         {
             List<string> filenames = new List<string>();
-            var logsByNode = CollectLogByNode(_outputs);
+            var logsByNode = CollectLogByNode(outputs);
             foreach (List<string> lines in logsByNode.Values)
             {
                 string projectFileFullPath = "";
@@ -46,7 +39,7 @@ namespace CppIncludeChecker
             return filenames;
         }
 
-        private List<string> MakeFullPathAndVerify(string projectFileFullPath, List<string> filenames)
+        private static List<string> MakeFullPathAndVerify(string projectFileFullPath, List<string> filenames)
         {
             List<string> output = new List<string>();
             foreach (string filename in filenames)
@@ -67,7 +60,7 @@ namespace CppIncludeChecker
             return output;
         }
 
-        private List<string> ExtractCompileFileFromLine (string line)
+        private static List<string> ExtractCompileFileFromLine (string line)
         {
             List<string> output = new List<string>();
             var match = Regex.Match(line, "errorReport:queue (.*)$");
