@@ -6,7 +6,7 @@ namespace CppIncludeChecker
 {
     public class Config
     {
-        public string vsMsBuildCmdPath { get; set; }
+        public string MsBuildCmdPath { get; set; }
         public string SolutionFilePath { get; set; }
         public bool ApplyChange { get; set; }
         public bool IgnoreSelfHeaderInclude { get; set; }
@@ -19,6 +19,22 @@ namespace CppIncludeChecker
             IgnoreSelfHeaderInclude = false;
             FilenameFilters = new List<string>();
             IncludeFilters = new List<string>();
+        }
+
+        public void Print(Logger logger)
+        {
+            logger.Log("SolutionFile: " + SolutionFilePath);
+            logger.Log("MsBuildCmdPath: " + MsBuildCmdPath);
+            logger.Log("ApplyChange: " + ApplyChange);
+            logger.Log("IgnoreSelfHeaderInclude: " + IgnoreSelfHeaderInclude);
+            foreach (string filter in FilenameFilters)
+            {
+                logger.Log("IgnoreFileFilter: " + filter);
+            }
+            foreach (string filter in IncludeFilters)
+            {
+                logger.Log("IgnoreIncludeFilter: " + filter);
+            }
         }
 
         public static Config Parse(string[] args)
@@ -53,7 +69,7 @@ namespace CppIncludeChecker
                 testString = "--msbuildenvpath:";
                 if (arg.StartsWith(testString))
                 {
-                    config.vsMsBuildCmdPath = arg.Substring(testString.Length);
+                    config.MsBuildCmdPath = arg.Substring(testString.Length);
                     continue;
                 }
                 testString = "--filenamefilter:";
@@ -69,7 +85,7 @@ namespace CppIncludeChecker
                     continue;
                 }
             }
-            if (config.vsMsBuildCmdPath == null)
+            if (config.MsBuildCmdPath == null)
             {
                 Console.WriteLine("Cannot find msbuild path. Check --msbuildenvpath");
                 PrintUsage();
@@ -81,20 +97,6 @@ namespace CppIncludeChecker
         public static void PrintUsage()
         {
             Console.WriteLine(@"Usage: {0} SolutionFilePath --msbuildenvpath:""C:\Program Files(x86)\Microsoft Visual Studio\2017\Professional\Common7\Tools\VsMSBuildCmd.bat"" [--applychange] [--ignoreselfheaderinclude] [--filenamefilter:xxxx.xxx]* [--includefilter:xxxx.h]*", Environment.CommandLine);
-        }
-
-        public void Print(Logger logger)
-        {
-            logger.Log("SolutionFile: " + SolutionFilePath);
-            logger.Log("ApplyChange: " + ApplyChange);
-            foreach (string filter in FilenameFilters)
-            {
-                logger.Log("Ignore file: " + filter);
-            }
-            foreach (string filter in IncludeFilters)
-            {
-                logger.Log("Ignore include: " + filter);
-            }
         }
     }
 }

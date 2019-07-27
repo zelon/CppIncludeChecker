@@ -72,36 +72,38 @@ namespace CppIncludeChecker
 
         private int TryRemoveIncludeAndCollectChanges(List<string> filenames)
         {
-            ChangeMaker changeMaker = new ChangeMaker();
             foreach (string filename in filenames)
             {
-				_logger.Log("Checking " + filename);
+				_logger.Log("Checking Filename: " + filename);
                 FileModifier fileModifier = new FileModifier(filename);
-                List<string> changeCandidates = changeMaker.AnalyzeIncludeLines(fileModifier.OriginalContent);
-                changeCandidates = Util.FilterOut(changeCandidates, _config.IncludeFilters);
-                if (changeCandidates.Count <= 0)
+                List<string> includeLines = IncludeLineAnalyzer.Analyze(fileModifier.OriginalContent);
+                includeLines = Util.FilterOut(includeLines, _config.IncludeFilters);
+                if (includeLines.Count <= 0)
                 {
+                    _logger.Log("  + not found include line");
                     continue;
                 }
-                List<string> successfulChanges = new List<string>();
-                foreach (var removeString in changeCandidates)
+                List<string> successfulRemovingTestOkIncludeLines = new List<string>();
+                foreach (string includeLine in includeLines)
                 {
-                    fileModifier.RemoveAndWrite(removeString);
+                       _logger.Log(string.Format("  + testing remove line: {0}", includeLine));
+                    fileModifier.RemoveAndWrite(includeLine);
                     var testBuildResult = _builder.Build();
                     if (testBuildResult.IsSuccess)
                     {
-                        successfulChanges.Add(removeString);
+                        _logger.Log(string.Format("  + testing remove line: {0}: {1}", includeLine, "[SUCCESS]"));
+                        successfulRemovingTestOkIncludeLines.Add(includeLine);
                     }
-                    _logger.LogToFile(string.Format("=== {0}:{1} build result ===", filename, removeString), testBuildResult.outputs);
+                    else
+                    {
+                        _logger.Log(string.Format("  + testing remove line: {0}: {1}", includeLine, "[FAILED]"));
+                    }
+                    _logger.LogToFile(string.Format("=== {0}:{1} build result ===", filename, includeLine), testBuildResult.outputs);
                     fileModifier.RevertAndWrite();
                 }
-                if (successfulChanges.Count > 0)
+                if (successfulRemovingTestOkIncludeLines.Count > 0)
                 {
-                    foreach (string success in successfulChanges)
-                    {
-						_logger.Log(string.Format("MarkedInclude:{0}:{1}", filename, success));
-                    }
-                    fileModifier.RemoveAndWrite(successfulChanges);
+                    fileModifier.RemoveAndWrite(successfulRemovingTestOkIncludeLines);
                     _appliedFileModifiers.Add(fileModifier);
                 }
             }

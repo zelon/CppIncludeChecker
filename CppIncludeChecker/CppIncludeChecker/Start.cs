@@ -11,7 +11,7 @@ namespace CppIncludeChecker
             {
                 return;
             }
-            string builderCommand = MsBuildBatchMaker.MakeAndGetPath(config.vsMsBuildCmdPath);
+            string builderCommand = MsBuildBatchMaker.MakeAndGetPath(config.MsBuildCmdPath);
             if (builderCommand == null)
             {
                 Console.WriteLine("Cannot find builderCommand");

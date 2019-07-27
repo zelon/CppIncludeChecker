@@ -3,14 +3,9 @@ using System.Text.RegularExpressions;
 
 namespace CppIncludeChecker
 {
-    public class ChangeMaker
+    public class IncludeLineAnalyzer
     {
-        public ChangeMaker()
-        {
-
-        }
-
-        public List<string> AnalyzeIncludeLines(string fileContent)
+        public static List<string> Analyze(string fileContent)
         {
             List<string> changes = new List<string>();
 
