@@ -12,6 +12,8 @@ namespace CppIncludeChecker
 		public Logger(string filename)
 		{
 			_text_writer = File.CreateText(filename);
+            DateTime now = DateTime.Now;
+            Log(string.Format("Start time: {0} {1}", now.ToLongDateString(), now.ToLongTimeString()));
 		}
 
 		public void Dispose()
