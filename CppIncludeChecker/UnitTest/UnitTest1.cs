@@ -326,5 +326,61 @@ return 0;
             Assert.IsTrue(filenames.Contains(@"SubDirectory\Module1.h"));
             Assert.IsTrue(filenames.Contains(@"targetver.h"));
         }
+
+        [TestMethod]
+        public void TestSelfHeaderIncludeBasic1()
+        {
+            string sourceFilename = @"aaa\bbb\a.cpp";
+            string includeLine = @"#include ""aaa\bbb\a.h""";
+            Assert.IsTrue(Util.IsSelfHeader(sourceFilename, includeLine));
+        }
+
+        [TestMethod]
+        public void TestSelfHeaderIncludeBasic2()
+        {
+            string sourceFilename = @"aaa\a.cpp";
+            string includeLine = @"\t #include ""aaa\include\a.h""";
+            Assert.IsTrue(Util.IsSelfHeader(sourceFilename, includeLine));
+        }
+
+        [TestMethod]
+        public void TestSelfHeaderIncludeBasic3()
+        {
+            string sourceFilename = @"aaa\private\a.cpp";
+            string includeLine = @"#include ""aaa\public\a.h"" ";
+            Assert.IsTrue(Util.IsSelfHeader(sourceFilename, includeLine));
+        }
+
+        [TestMethod]
+        public void TestSelfHeaderIncludeBasic4()
+        {
+            string sourceFilename = @"aaa\private\a.cpp ";
+            string includeLine = @"  #include ""aaa\public\a.h """;
+            Assert.IsTrue(Util.IsSelfHeader(sourceFilename, includeLine));
+        }
+
+        [TestMethod]
+        public void TestSelfHeaderIncludeBasic5()
+        {
+            string sourceFilename = @"aaa\private\a.cpp ";
+            string includeLine = @"  #include ""aaa\public\a.hpp """;
+            Assert.IsTrue(Util.IsSelfHeader(sourceFilename, includeLine));
+        }
+
+        [TestMethod]
+        public void TestSelfHeaderIncludeBasic6()
+        {
+            string sourceFilename = @"aaa\private\Module2.cpp ";
+            string includeLine = @"#include ""Module2.h""";
+            Assert.IsTrue(Util.IsSelfHeader(sourceFilename, includeLine));
+        }
+
+        [TestMethod]
+        public void TestSelfHeaderIncludeMustFail()
+        {
+            string sourceFilename = @"aaa\bbb\ab.cpp";
+            string includeLine = @"#include ""aaa\bbb\a.h""";
+            Assert.IsTrue(Util.IsSelfHeader(sourceFilename, includeLine) == false);
+        }
     }
 }

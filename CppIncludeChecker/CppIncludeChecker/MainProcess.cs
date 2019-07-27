@@ -113,7 +113,12 @@ namespace CppIncludeChecker
                 List<string> successfulRemovingTestOkIncludeLines = new List<string>();
                 foreach (string includeLine in includeLines)
                 {
-                    _logger.LogWithoutEndline(string.Format("  + testing remove line: {0} .... ", includeLine));
+                    if (_config.IgnoreSelfHeaderInclude && Util.IsSelfHeader(filename, includeLine))
+                    {
+                        _logger.Log(string.Format("  + skipping: {0} by IgnoreSelfHeader", includeLine));
+                        continue;
+                    }
+                    _logger.LogWithoutEndline(string.Format("  + testing : {0} .... ", includeLine));
                     fileModifier.RemoveAndWrite(includeLine);
                     var testBuildResult = _builder.Build();
                     if (testBuildResult.IsSuccess)

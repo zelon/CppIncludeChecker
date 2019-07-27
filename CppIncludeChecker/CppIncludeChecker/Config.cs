@@ -65,23 +65,28 @@ namespace CppIncludeChecker
                 {
                     continue;
                 }
+                string testString = "";
+
+                testString = "--msbuildenvpath:";
+                if (arg.StartsWith(testString))
+                {
+                    config.MsBuildCmdPath = arg.Substring(testString.Length);
+                    continue;
+                }
                 if (arg == "--applychange")
                 {
                     config.ApplyChange = true;
                     continue;
                 }
-                string testString = "";
-
                 testString = "--exec:";
                 if (arg.StartsWith(testString))
                 {
                     config.ExecCmdPath = arg.Substring(testString.Length);
                     continue;
                 }
-                testString = "--msbuildenvpath:";
-                if (arg.StartsWith(testString))
+                if (arg == "--ignoreselfheaderinclude")
                 {
-                    config.MsBuildCmdPath = arg.Substring(testString.Length);
+                    config.IgnoreSelfHeaderInclude = true;
                     continue;
                 }
                 testString = "--maxcheckfilecount:";

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 
 namespace CppIncludeChecker
 {
@@ -46,6 +47,18 @@ namespace CppIncludeChecker
                 }
             }
             return output;
+        }
+
+        public static bool IsSelfHeader(string sourceFilename, string includeLine)
+        {
+            string sourceFilenameOnly = Path.GetFileNameWithoutExtension(sourceFilename).ToLower().Trim();
+
+            includeLine = includeLine.Replace("#include", "");
+            includeLine = includeLine.Replace("\"", "");
+            string includeLineFilenameOnly = Path.GetFileNameWithoutExtension(includeLine).ToLower().Trim();
+
+
+            return sourceFilenameOnly == includeLineFilenameOnly;
         }
     }
 }
