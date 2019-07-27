@@ -5,7 +5,7 @@ using System.IO;
 
 namespace CppIncludeChecker
 {
-	class Logger
+	public class Logger : IDisposable
 	{
 		private TextWriter _text_writer;
 

@@ -3,44 +3,19 @@ using System.Collections.Generic;
 
 namespace CppIncludeChecker
 {
-    class MainProcess : IDisposable
+    class MainProcess
     {
         private Builder _builder;
 		private Logger _logger;
 		private List<FileModifier> _appliedFileModifiers = new List<FileModifier>();
-        private readonly List<string> _filenameFilters;
-        private readonly List<string> _includeFilters;
-        private readonly bool _applyChange;
+        private readonly Config _config;
 
-        public MainProcess(string solutionFilePath, bool applyChange, List<string> filenameFilters, List<string> includeFilters)
+        public MainProcess(Config config, Logger logger)
         {
-            _applyChange = applyChange;
-            _filenameFilters = filenameFilters;
-            _includeFilters = includeFilters;
-            _builder = new Builder(solutionFilePath);
-            _logger = new Logger("CppIncludeChecker.log");
-
-			PrintSetting(solutionFilePath);
+            _config = config;
+            _logger = logger;
+            _builder = new Builder(_config.SolutionFilePath);
         }
-
-        public void Dispose()
-        {
-            _logger.Dispose();
-        }
-
-		private void PrintSetting(string solutionFilePath)
-		{
-			_logger.Log("SolutionFile: " + solutionFilePath);
-			_logger.Log("ApplyChange: " + _applyChange);
-			foreach (string filter in _filenameFilters)
-			{
-				_logger.Log("Ignore file: " + filter);
-			}
-			foreach (string filter in _includeFilters)
-			{
-				_logger.Log("Ignore include: " + filter);
-			}
-		}
 
 		public void Start()
         {
@@ -70,7 +45,7 @@ namespace CppIncludeChecker
                 PrintAppliedFileModifiers();
             }
 
-            if (_applyChange == false)
+            if (_config.ApplyChange == false)
             {
                 RevertAll();
 				_logger.Log("All test changes has been reverted");
@@ -107,7 +82,7 @@ namespace CppIncludeChecker
             foreach (string filename in filenames)
             {
                 bool isInFilter = false;
-                foreach (string filterFilename in _filenameFilters)
+                foreach (string filterFilename in _config.FilenameFilters)
                 {
                     if (filename.Contains(filterFilename))
                     {
@@ -167,7 +142,7 @@ namespace CppIncludeChecker
             foreach (string include in includes)
             {
                 bool isInFilter = false;
-                foreach (string filter in _includeFilters)
+                foreach (string filter in _config.IncludeFilters)
                 {
                     if (include.Contains(filter))
                     {
