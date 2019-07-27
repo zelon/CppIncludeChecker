@@ -66,7 +66,7 @@ namespace CppIncludeChecker
         {
 			_logger.Log("Start of Initial Rebuild");
             Builder.BuildResult buildResult = _builder.Rebuild();
-			_logger.Log("End of Initial Rebuild");
+			_logger.Log("End of Initial Rebuild. BuildDuration: " + buildResult.GetBuildDurationString());
             if (buildResult.IsSuccess == false || buildResult.errors.Count > 0)
             {
 				_logger.Log("There are errors of StartRebuild", buildResult.outputs, buildResult.errors);
@@ -81,30 +81,30 @@ namespace CppIncludeChecker
             NeedlessIncludeLines needlessIncludeLines = new NeedlessIncludeLines();
             foreach (string filename in filenames)
             {
-				_logger.Log("Checking Filename: " + filename);
                 FileModifier fileModifier = new FileModifier(filename);
                 List<string> includeLines = IncludeLineAnalyzer.Analyze(fileModifier.OriginalContent);
                 includeLines = Util.FilterOut(includeLines, _config.IncludeFilters);
                 if (includeLines.Count <= 0)
                 {
-                    _logger.Log("  + not found include line");
+                    _logger.Log(filename + " has no include line");
                     continue;
                 }
+                _logger.Log("Checking Filename: " + filename);
                 List<string> successfulRemovingTestOkIncludeLines = new List<string>();
                 foreach (string includeLine in includeLines)
                 {
-                       _logger.Log(string.Format("  + testing remove line: {0}", includeLine));
+                    _logger.LogWithoutEndline(string.Format("  + testing remove line: {0} .... ", includeLine));
                     fileModifier.RemoveAndWrite(includeLine);
                     var testBuildResult = _builder.Build();
                     if (testBuildResult.IsSuccess)
                     {
-                        _logger.Log(string.Format("  + testing remove line: {0}: {1}", includeLine, "[SUCCESS]"));
+                        _logger.Log(string.Format(" ({0} testing build time) ----> Result: [[[[[[CAN BE REMOVED]]]]]]", testBuildResult.GetBuildDurationString()));
                         successfulRemovingTestOkIncludeLines.Add(includeLine);
                         needlessIncludeLines.Add(filename, includeLine);
                     }
                     else
                     {
-                        _logger.Log(string.Format("  + testing remove line: {0}: {1}", includeLine, "[FAILED]"));
+                        _logger.Log(string.Format(" ({0} testing build time) ----> Result: [CANNOT BE REMOVED]", testBuildResult.GetBuildDurationString()));
                     }
                     _logger.LogToFile(string.Format("=== {0}:{1} build result ===", filename, includeLine), testBuildResult.outputs);
                     fileModifier.RevertAndWrite();
@@ -117,7 +117,7 @@ namespace CppIncludeChecker
         {
 			_logger.Log("Start of Final Rebuild");
             var lastRebuildResult = _builder.Rebuild();
-			_logger.Log("End of Final Rebuild");
+			_logger.Log("End of Final Rebuild. BuildDuration: " + lastRebuildResult.GetBuildDurationString());
             _logger.LogToFile("=== Final Rebuild result ===", lastRebuildResult.outputs);
             if (lastRebuildResult.IsSuccess)
             {
