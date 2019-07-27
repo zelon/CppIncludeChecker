@@ -10,11 +10,11 @@ namespace CppIncludeChecker
 		private List<FileModifier> _appliedFileModifiers = new List<FileModifier>();
         private readonly Config _config;
 
-        public MainProcess(Config config, Logger logger)
+        public MainProcess(Config config, Logger logger, string builderCommand)
         {
             _config = config;
             _logger = logger;
-            _builder = new Builder(_config.SolutionFilePath);
+            _builder = new Builder(_config.SolutionFilePath, builderCommand);
         }
 
 		public void Start()

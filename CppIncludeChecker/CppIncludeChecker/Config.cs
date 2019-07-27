@@ -6,6 +6,7 @@ namespace CppIncludeChecker
 {
     public class Config
     {
+        public string vsMsBuildCmdPath { get; set; }
         public string SolutionFilePath { get; set; }
         public bool ApplyChange { get; set; }
         public bool IgnoreSelfHeaderInclude { get; set; }
@@ -24,7 +25,7 @@ namespace CppIncludeChecker
         {
             if (args.Length < 1)
             {
-                Console.WriteLine("Usage: {0} SolutionFilePath [--applychange] [--ignoreselfheaderinclude] [--filenamefilter:xxxx.xxx]* [--includefilter:xxxx.h]*", Environment.CommandLine);
+                PrintUsage();
                 return null;
             }
             Config config = new Config
@@ -49,6 +50,12 @@ namespace CppIncludeChecker
                 }
                 string testString = "";
 
+                testString = "--msbuildenvpath:";
+                if (arg.StartsWith(testString))
+                {
+                    config.vsMsBuildCmdPath = arg.Substring(testString.Length);
+                    continue;
+                }
                 testString = "--filenamefilter:";
                 if (arg.StartsWith(testString))
                 {
@@ -62,7 +69,18 @@ namespace CppIncludeChecker
                     continue;
                 }
             }
+            if (config.vsMsBuildCmdPath == null)
+            {
+                Console.WriteLine("Cannot find msbuild path. Check --msbuildenvpath");
+                PrintUsage();
+                return null;
+            }
             return config;
+        }
+
+        public static void PrintUsage()
+        {
+            Console.WriteLine(@"Usage: {0} SolutionFilePath --msbuildenvpath:""C:\Program Files(x86)\Microsoft Visual Studio\2017\Professional\Common7\Tools\VsMSBuildCmd.bat"" [--applychange] [--ignoreselfheaderinclude] [--filenamefilter:xxxx.xxx]* [--includefilter:xxxx.h]*", Environment.CommandLine);
         }
 
         public void Print(Logger logger)

@@ -11,10 +11,16 @@ namespace CppIncludeChecker
             {
                 return;
             }
+            string builderCommand = MsBuildBatchMaker.MakeAndGetPath(config.vsMsBuildCmdPath);
+            if (builderCommand == null)
+            {
+                Console.WriteLine("Cannot find builderCommand");
+                return;
+            }
             using (Logger logger = new Logger("CppIncludeChecker.log"))
             {
                 config.Print(logger);
-                MainProcess mainProcess = new MainProcess(config, logger);
+                MainProcess mainProcess = new MainProcess(config, logger, builderCommand);
                 mainProcess.Start();
             }
 

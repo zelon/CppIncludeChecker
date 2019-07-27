@@ -14,19 +14,20 @@ namespace CppIncludeChecker
 
         private readonly string _solutionFileFullPath;
         private readonly string _workingDirectory;
-        private readonly string kMsBuildCommand = @"E:\git\CppIncludeChecker\CppIncludeChecker\CppIncludeChecker\msbuild.bat";
+        private readonly string _builderCommand;
 
-        public Builder(string solutionFilePath)
+        public Builder(string solutionFilePath, string builderCommand)
         {
             _solutionFileFullPath = Path.GetFullPath(solutionFilePath);
             _workingDirectory = Path.GetDirectoryName(_solutionFileFullPath);
+            _builderCommand = builderCommand;
         }
 
         public BuildResult Build()
         {
             string msbuildArguments = string.Format("{0} /t:Build /maxcpucount", _solutionFileFullPath);
             BuildResult buildResult = new BuildResult();
-            var runResult = CommandExecutor.Run(_workingDirectory, kMsBuildCommand, msbuildArguments);
+            var runResult = CommandExecutor.Run(_workingDirectory, _builderCommand, msbuildArguments);
             buildResult.outputs = runResult.outputs;
             buildResult.errors = runResult.errors;
             buildResult.IsSuccess = IsBuildSuccess(buildResult.outputs);
@@ -37,7 +38,7 @@ namespace CppIncludeChecker
         {
             string msbuildArguments = string.Format("{0} /t:Rebuild /maxcpucount", _solutionFileFullPath);
             BuildResult buildResult = new BuildResult();
-            var runResult = CommandExecutor.Run(_workingDirectory, kMsBuildCommand, msbuildArguments);
+            var runResult = CommandExecutor.Run(_workingDirectory, _builderCommand, msbuildArguments);
             buildResult.outputs = runResult.outputs;
             buildResult.errors = runResult.errors;
             buildResult.IsSuccess = IsBuildSuccess(buildResult.outputs);
