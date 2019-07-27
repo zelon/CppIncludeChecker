@@ -1,5 +1,6 @@
+using System;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
+using System.IO;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using CppIncludeChecker;
 
@@ -74,15 +75,22 @@ Build succeeded.
     0 Error(s)
 ";
 
+            string currentDirectory = Environment.CurrentDirectory;
+            string testCppSolutionDirectory = Path.Combine(currentDirectory, @"..\..\..\..\..\TestCppSolution");
+            testCppSolutionDirectory = Path.GetFullPath(testCppSolutionDirectory);
+            string replaceSource = @"E:\git\CppIncludeChecker\TestCppSolution";
+            string replaceTarget = testCppSolutionDirectory;
+            log = log.Replace(replaceSource, replaceTarget);
             List<string> outputs = new List<string>();
             foreach (string line in log.Split("\n"))
             {
                 outputs.Add(line);
             }
             var fileList = CompileFileListExtractor.GetFilenames(outputs);
-            Assert.IsTrue(fileList.Exists((filename) => filename == @"E:\git\CppIncludeChecker\TestCppSolution\TestCppSolution\SubDirectory\Module1.cpp"));
-            Assert.IsTrue(fileList.Exists((filename) => filename == @"E:\git\CppIncludeChecker\TestCppSolution\Module2.cpp"));
-            Assert.IsTrue(fileList.Exists((filename) => filename == @"E:\git\CppIncludeChecker\TestCppSolution\TestCppSolution\TestCppSolution.cpp"));
+
+            Assert.IsTrue(fileList.Exists((filename) => filename == string.Format(@"{0}\TestCppSolution\SubDirectory\Module1.cpp", testCppSolutionDirectory)));
+            Assert.IsTrue(fileList.Exists((filename) => filename == string.Format(@"{0}\Module2.cpp", testCppSolutionDirectory)));
+            Assert.IsTrue(fileList.Exists((filename) => filename == string.Format(@"{0}\TestCppSolution\TestCppSolution.cpp", testCppSolutionDirectory)));
         }
 
         [TestMethod]
