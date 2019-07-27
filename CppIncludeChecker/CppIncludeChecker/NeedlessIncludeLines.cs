@@ -23,15 +23,14 @@ namespace CppIncludeChecker
         {
             includeLineInfos.Add(new IncludeLineInfo
             {
-                Filename = filename
+                Filename = filename,
+                IncludeLine = includeLine
             });
         }
 
-        public int Count {
-            get
-            {
-                return includeLineInfos.Count;
-            }
+        public bool IsEmpty()
+        {
+            return includeLineInfos.Count == 0;
         }
 
         public void Print(Logger logger)

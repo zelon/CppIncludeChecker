@@ -18,11 +18,13 @@ namespace CppIncludeChecker
 
 		public void Start()
         {
+            _logger.LogSeperateLine();
             Builder.BuildResult startBuildResult = RebuildAtStart();
             if (startBuildResult.IsSuccess == false)
             {
                 return;
             }
+            _logger.LogSeperateLine();
             List<string> sourceFilenames = CompileFileListExtractor.GetFilenames(startBuildResult.outputs);
             sourceFilenames = Util.FilterOut(sourceFilenames, _config.FilenameFilters);
             if (sourceFilenames.Count <= 0)
@@ -32,18 +34,22 @@ namespace CppIncludeChecker
             }
             NeedlessIncludeLines needlessIncludeLines = TryRemoveIncludeAndCollectChanges(sourceFilenames);
             _logger.LogSeperateLine();
-            if (needlessIncludeLines.Count <= 0)
+            if (needlessIncludeLines.IsEmpty())
             {
-				_logger.Log("There is no needless include. Good!!");
+				_logger.Log("There is no needless include. Nice project!!!!!!!!!!!");
                 return;
             }
 
             // Some build can break Rebuild. So check rebuild again
             Builder.BuildResult lastBuildResult = RebuildAtLast();
-            if (lastBuildResult.IsSuccess)
+            if (lastBuildResult.IsSuccess == false)
             {
-                needlessIncludeLines.Print(_logger);
+                _logger.Log("Final rebuild is failed!!!!!!!!!!!!!!!!!!!!!!!");
+                return;
             }
+            _logger.LogSeperateLine();
+
+            needlessIncludeLines.Print(_logger);
 
             _logger.LogSeperateLine();
             if (_config.ApplyChange)
@@ -58,15 +64,15 @@ namespace CppIncludeChecker
 
         private Builder.BuildResult RebuildAtStart()
         {
-			_logger.Log("Start of StartRebuild");
+			_logger.Log("Start of Initial Rebuild");
             Builder.BuildResult buildResult = _builder.Rebuild();
-			_logger.Log("End of StartRebuild");
+			_logger.Log("End of Initial Rebuild");
             if (buildResult.IsSuccess == false || buildResult.errors.Count > 0)
             {
 				_logger.Log("There are errors of StartRebuild", buildResult.outputs, buildResult.errors);
                 return buildResult;
             }
-            _logger.LogToFile("=== StartRebuild result ===", buildResult.outputs);
+            _logger.LogToFile("=== Initial Rebuild result ===", buildResult.outputs);
             return buildResult;
         }
 
@@ -109,17 +115,17 @@ namespace CppIncludeChecker
 
         private Builder.BuildResult RebuildAtLast()
         {
-			_logger.Log("Start of LastRebuild");
+			_logger.Log("Start of Final Rebuild");
             var lastRebuildResult = _builder.Rebuild();
-			_logger.Log("End of LastRebuild");
-            _logger.LogToFile("=== LastRebuild result ===", lastRebuildResult.outputs);
+			_logger.Log("End of Final Rebuild");
+            _logger.LogToFile("=== Final Rebuild result ===", lastRebuildResult.outputs);
             if (lastRebuildResult.IsSuccess)
             {
-				_logger.Log("LastRebuild is successful");
+				_logger.Log("Final Rebuild is successful");
             }
             else
             {
-				_logger.Log("LastRebuild is failed");
+				_logger.Log("Final Rebuild is failed");
             }
             return lastRebuildResult;
         }
