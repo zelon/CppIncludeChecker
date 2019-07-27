@@ -7,7 +7,6 @@ namespace CppIncludeChecker
     {
         private Builder _builder;
 		private Logger _logger;
-		private List<FileModifier> _appliedFileModifiers = new List<FileModifier>();
         private readonly Config _config;
 
         public MainProcess(Config config, Logger logger, string builderCommand)
@@ -31,8 +30,9 @@ namespace CppIncludeChecker
 				_logger.Log("Cannot extract any file");
                 return;
             }
-            int changedCount = TryRemoveIncludeAndCollectChanges(sourceFilenames);
-            if (changedCount <= 0)
+            NeedlessIncludeLines needlessIncludeLines = TryRemoveIncludeAndCollectChanges(sourceFilenames);
+            _logger.LogSeperateLine();
+            if (needlessIncludeLines.Count <= 0)
             {
 				_logger.Log("There is no needless include. Good!!");
                 return;
@@ -42,13 +42,13 @@ namespace CppIncludeChecker
             Builder.BuildResult lastBuildResult = RebuildAtLast();
             if (lastBuildResult.IsSuccess)
             {
-                PrintAppliedFileModifiers();
+                needlessIncludeLines.Print(_logger);
             }
 
-            if (_config.ApplyChange == false)
+            _logger.LogSeperateLine();
+            if (_config.ApplyChange)
             {
-                RevertAll();
-				_logger.Log("All test changes has been reverted");
+				_logger.Log("Starting apply changes");
             }
             else
             {
@@ -70,8 +70,9 @@ namespace CppIncludeChecker
             return buildResult;
         }
 
-        private int TryRemoveIncludeAndCollectChanges(List<string> filenames)
+        private NeedlessIncludeLines TryRemoveIncludeAndCollectChanges(List<string> filenames)
         {
+            NeedlessIncludeLines needlessIncludeLines = new NeedlessIncludeLines();
             foreach (string filename in filenames)
             {
 				_logger.Log("Checking Filename: " + filename);
@@ -93,6 +94,7 @@ namespace CppIncludeChecker
                     {
                         _logger.Log(string.Format("  + testing remove line: {0}: {1}", includeLine, "[SUCCESS]"));
                         successfulRemovingTestOkIncludeLines.Add(includeLine);
+                        needlessIncludeLines.Add(filename, includeLine);
                     }
                     else
                     {
@@ -101,13 +103,8 @@ namespace CppIncludeChecker
                     _logger.LogToFile(string.Format("=== {0}:{1} build result ===", filename, includeLine), testBuildResult.outputs);
                     fileModifier.RevertAndWrite();
                 }
-                if (successfulRemovingTestOkIncludeLines.Count > 0)
-                {
-                    fileModifier.RemoveAndWrite(successfulRemovingTestOkIncludeLines);
-                    _appliedFileModifiers.Add(fileModifier);
-                }
             }
-            return _appliedFileModifiers.Count;
+            return needlessIncludeLines;
         }
 
         private Builder.BuildResult RebuildAtLast()
@@ -125,25 +122,6 @@ namespace CppIncludeChecker
 				_logger.Log("LastRebuild is failed");
             }
             return lastRebuildResult;
-        }
-
-        private void PrintAppliedFileModifiers()
-        {
-            foreach (FileModifier fileModifier in _appliedFileModifiers)
-            {
-                foreach (string removedString in fileModifier.RemovedStrings)
-                {
-					_logger.Log(string.Format("NeedlessInclude:{0}:{1}", fileModifier.Filename, removedString));
-                }
-            }
-        }
-
-        private void RevertAll()
-        {
-            foreach (var fileModifier in _appliedFileModifiers)
-            {
-                fileModifier.RevertAndWrite();
-            }
         }
     }
 }

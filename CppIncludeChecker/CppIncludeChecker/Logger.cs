@@ -45,6 +45,11 @@ namespace CppIncludeChecker
 			}
 		}
 
+        public void LogSeperateLine()
+        {
+            Log("--------------------------------------------------------------------");
+        }
+
 		public void LogToFile(string text, List<string> outputs = null, List<string> errors = null)
 		{
 			_text_writer.WriteLine(text);
