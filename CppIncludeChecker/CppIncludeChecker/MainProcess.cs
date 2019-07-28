@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace CppIncludeChecker
 {
@@ -19,13 +18,13 @@ namespace CppIncludeChecker
 		public void Start()
         {
             _logger.LogSeperateLine();
-            Builder.BuildResult startBuildResult = RebuildAtStart();
+            BuildResult startBuildResult = RebuildAtStart();
             if (startBuildResult.IsSuccess == false)
             {
                 return;
             }
             _logger.LogSeperateLine();
-            SortedSet<string> sourceFilenames = CompileFileListExtractor.GetFilenames(startBuildResult.outputs);
+            SortedSet<string> sourceFilenames = CompileFileListExtractor.GetFilenames(startBuildResult.Outputs);
             sourceFilenames = Util.FilterOut(sourceFilenames, _config.FilenameFilters);
             if (sourceFilenames.Count <= 0)
             {
@@ -41,7 +40,7 @@ namespace CppIncludeChecker
             }
 
             // Some build can break Rebuild. So check rebuild again
-            Builder.BuildResult lastBuildResult = RebuildAtLast();
+            BuildResult lastBuildResult = RebuildAtLast();
             if (lastBuildResult.IsSuccess == false)
             {
                 _logger.Log("Final rebuild is failed!!!!!!!!!!!!!!!!!!!!!!!");
@@ -75,17 +74,17 @@ namespace CppIncludeChecker
             }
         }
 
-        private Builder.BuildResult RebuildAtStart()
+        private BuildResult RebuildAtStart()
         {
 			_logger.Log("Start of Initial Rebuild");
-            Builder.BuildResult buildResult = _builder.Rebuild();
+            BuildResult buildResult = _builder.Rebuild();
 			_logger.Log("End of Initial Rebuild. BuildDuration: " + buildResult.GetBuildDurationString());
-            if (buildResult.IsSuccess == false || buildResult.errors.Count > 0)
+            if (buildResult.IsSuccess == false || buildResult.Errors.Count > 0)
             {
-				_logger.Log("There are errors of StartRebuild", buildResult.outputs, buildResult.errors);
+				_logger.Log("There are errors of StartRebuild", buildResult.Outputs, buildResult.Errors);
                 return buildResult;
             }
-            _logger.LogToFile("=== Initial Rebuild result ===", buildResult.outputs);
+            _logger.LogToFile("=== Initial Rebuild result ===", buildResult.Outputs);
             return buildResult;
         }
 
@@ -101,6 +100,7 @@ namespace CppIncludeChecker
                     break;
                 }
                 ++checkedFileCount;
+
                 FileModifier fileModifier = new FileModifier(filename);
                 List<string> includeLines = IncludeLineAnalyzer.Analyze(fileModifier.OriginalContent);
                 includeLines = Util.FilterOut(includeLines, _config.IncludeFilters);
@@ -110,7 +110,6 @@ namespace CppIncludeChecker
                     continue;
                 }
                 _logger.Log("Checking Filename: " + filename);
-                List<string> successfulRemovingTestOkIncludeLines = new List<string>();
                 foreach (string includeLine in includeLines)
                 {
                     if (_config.IgnoreSelfHeaderInclude && Util.IsSelfHeader(filename, includeLine))
@@ -124,14 +123,13 @@ namespace CppIncludeChecker
                     if (testBuildResult.IsSuccess)
                     {
                         _logger.Log(string.Format(" ({0} testing build time) ----> [[[[[[CAN BE REMOVED]]]]]]", testBuildResult.GetBuildDurationString()));
-                        successfulRemovingTestOkIncludeLines.Add(includeLine);
                         needlessIncludeLines.Add(filename, includeLine);
                     }
                     else
                     {
                         _logger.Log(string.Format(" ({0} testing build time) ----> Cannot be removed", testBuildResult.GetBuildDurationString()));
                     }
-                    _logger.LogToFile(string.Format("=== {0}:{1} build result ===", filename, includeLine), testBuildResult.outputs);
+                    _logger.LogToFile(string.Format("=== {0}:{1} build result ===", filename, includeLine), testBuildResult.Outputs);
                     fileModifier.RevertAndWrite();
                     if (needlessIncludeLines.IncludeLineInfos.Count >= _config.MaxSuccessRemoveCount)
                     {
@@ -143,12 +141,12 @@ namespace CppIncludeChecker
             return needlessIncludeLines;
         }
 
-        private Builder.BuildResult RebuildAtLast()
+        private BuildResult RebuildAtLast()
         {
 			_logger.Log("Start of Final Rebuild");
             var lastRebuildResult = _builder.Rebuild();
 			_logger.Log("End of Final Rebuild. BuildDuration: " + lastRebuildResult.GetBuildDurationString());
-            _logger.LogToFile("=== Final Rebuild result ===", lastRebuildResult.outputs);
+            _logger.LogToFile("=== Final Rebuild result ===", lastRebuildResult.Outputs);
             if (lastRebuildResult.IsSuccess)
             {
 				_logger.Log("Final Rebuild is successful");

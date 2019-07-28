@@ -1,26 +1,14 @@
 ﻿using System;
 using System.IO;
-using System.Collections.Generic;
 
 namespace CppIncludeChecker
 {
     class Builder
     {
-        public class BuildResult
+        private enum BuildType
         {
-            public bool IsSuccess { get; set; }
-            public List<string> outputs;
-            public List<string> errors;
-            public TimeSpan buildDuration { get; set; }
-
-            public string GetBuildDurationString()
-            {
-                if (buildDuration.TotalMinutes > 1)
-                {
-                    return string.Format("{0:0.00} minutes", buildDuration.TotalMinutes);
-                }
-                return string.Format("{0:0.00} seconds", buildDuration.TotalSeconds);
-            }
+            Build,
+            Rebuild
         }
 
         private readonly string _solutionFileFullPath;
@@ -36,40 +24,24 @@ namespace CppIncludeChecker
 
         public BuildResult Build()
         {
-            DateTime buildStartTime = DateTime.Now;
-            string msbuildArguments = string.Format("{0} /t:Build /maxcpucount", _solutionFileFullPath);
-            BuildResult buildResult = new BuildResult();
-            var runResult = CommandExecutor.Run(_workingDirectory, _builderCommand, msbuildArguments);
-            buildResult.outputs = runResult.outputs;
-            buildResult.errors = runResult.errors;
-            buildResult.IsSuccess = IsBuildSuccess(buildResult.outputs);
-            buildResult.buildDuration = DateTime.Now - buildStartTime;
-            return buildResult;
+            return DoBuild(BuildType.Build);
         }
 
         public BuildResult Rebuild()
         {
-            DateTime buildStartTime = DateTime.Now;
-            string msbuildArguments = string.Format("{0} /t:Rebuild /maxcpucount", _solutionFileFullPath);
-            BuildResult buildResult = new BuildResult();
-            var runResult = CommandExecutor.Run(_workingDirectory, _builderCommand, msbuildArguments);
-            buildResult.outputs = runResult.outputs;
-            buildResult.errors = runResult.errors;
-            buildResult.IsSuccess = IsBuildSuccess(buildResult.outputs);
-            buildResult.buildDuration = DateTime.Now - buildStartTime;
-            return buildResult;
+            return DoBuild(BuildType.Rebuild);
         }
 
-        private bool IsBuildSuccess(List<string> output)
+        private BuildResult DoBuild(BuildType buildType)
         {
-            foreach (string line in output)
-            {
-                if (line.StartsWith("Build succeeded"))
-                {
-                    return true;
-                }
-            }
-            return false;
+            DateTime buildStartTime = DateTime.Now;
+            string msbuildArguments = string.Format("{0} /t:{1} /maxcpucount", _solutionFileFullPath, buildType.ToString());
+            var runResult = CommandExecutor.Run(_workingDirectory, _builderCommand, msbuildArguments);
+
+            return new BuildResult(
+                runResult.outputs,
+                runResult.errors,
+                buildDuration: DateTime.Now - buildStartTime);
         }
     }
 }
