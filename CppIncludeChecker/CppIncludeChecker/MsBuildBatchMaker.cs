@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
 
 namespace CppIncludeChecker
 {
@@ -14,8 +12,6 @@ namespace CppIncludeChecker
 
         public static string MakeAndGetPath(string vsMSBuildCmdPathFromConfig)
         {
-            string programFilesX86 = Environment.GetEnvironmentVariable("ProgramFiles(x86)");
-
             if (vsMSBuildCmdPathFromConfig != null)
             {
                 if (File.Exists(vsMSBuildCmdPathFromConfig) == false)
