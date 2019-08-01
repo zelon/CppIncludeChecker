@@ -39,15 +39,6 @@ namespace CppIncludeChecker
                 return;
             }
 
-            // Some build can break Rebuild. So check rebuild again
-            BuildResult lastBuildResult = RebuildAtLast();
-            if (lastBuildResult.IsSuccess == false)
-            {
-                _logger.Log("Final rebuild is failed!!!!!!!!!!!!!!!!!!!!!!!");
-                return;
-            }
-            _logger.LogSeperateLine();
-
             needlessIncludeLines.Print(_logger);
 
             _logger.LogSeperateLine();
@@ -71,6 +62,16 @@ namespace CppIncludeChecker
                     FileModifier fileModifier = new FileModifier(filename);
                     fileModifier.RemoveAndWrite(includeLine);
                 }
+            }
+            // Some changes can break the build. So rebuild again
+            BuildResult lastBuildResult = RebuildAtLast();
+            if (lastBuildResult.IsSuccess == false)
+            {
+                _logger.Log("Final rebuild is successful");
+            }
+            else
+            {
+                _logger.Log("Final rebuild is failed!!!!!!!!!!!!!!!!!!!!!!!");
             }
         }
 
