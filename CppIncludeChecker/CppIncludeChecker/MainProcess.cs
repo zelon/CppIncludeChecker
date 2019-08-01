@@ -69,7 +69,7 @@ namespace CppIncludeChecker
             }
             // Some changes can break the build. So rebuild again
             BuildResult lastBuildResult = RebuildAtLast();
-            if (lastBuildResult.IsSuccess == false)
+            if (lastBuildResult.IsSuccess)
             {
                 _logger.Log("Final rebuild is successful");
             }
@@ -159,14 +159,6 @@ namespace CppIncludeChecker
             var lastRebuildResult = _builder.Rebuild();
 			_logger.Log("End of Final Rebuild. BuildDuration: " + lastRebuildResult.GetBuildDurationString());
             _logger.LogToFile("=== Final Rebuild result ===", lastRebuildResult.Outputs);
-            if (lastRebuildResult.IsSuccess)
-            {
-				_logger.Log("Final Rebuild is successful");
-            }
-            else
-            {
-				_logger.Log("Final Rebuild is failed");
-            }
             return lastRebuildResult;
         }
     }
