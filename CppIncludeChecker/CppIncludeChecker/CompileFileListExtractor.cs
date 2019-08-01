@@ -63,12 +63,16 @@ namespace CppIncludeChecker
         private static List<string> ExtractCompileFileFromLine (string line)
         {
             List<string> output = new List<string>();
-            var match = Regex.Match(line, "errorReport:queue (.*)$");
+            var match = Regex.Match(line, @"CL\.exe.*errorReport:queue (.*)$");
             if (match.Success)
             {
                 string files = match.Groups[1].Value.Trim();
                 foreach (string file in files.Split(' '))
                 {
+                    if (file.StartsWith("/"))
+                    {
+                        continue;
+                    }
                     output.Add(file);
                 }
             }
