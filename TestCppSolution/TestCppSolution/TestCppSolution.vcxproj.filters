@@ -36,6 +36,9 @@
     <ClInclude Include="ExcludedSource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\Module2Indirect.h">
+      <Filter>ParentDirectory</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">

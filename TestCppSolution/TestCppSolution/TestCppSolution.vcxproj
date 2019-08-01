@@ -149,6 +149,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\Module2.h" />
+    <ClInclude Include="..\Module2Indirect.h" />
     <ClInclude Include="ExcludedSource.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="SubDirectory\Module1.h" />
