@@ -4,8 +4,8 @@ namespace CppIncludeChecker
 {
     class MainProcess
     {
-        private Builder _builder;
-		private Logger _logger;
+        private readonly Builder _builder;
+		private readonly Logger _logger;
         private readonly Config _config;
 
         public MainProcess(Config config, Logger logger, string builderCommand)
@@ -18,13 +18,14 @@ namespace CppIncludeChecker
 		public void Start()
         {
             _logger.LogSeperateLine();
-            BuildResult startBuildResult = RebuildAtStart();
-            if (startBuildResult.IsSuccess == false)
+            BuildResult initialRebuildResult = RebuildAtStart();
+            if (initialRebuildResult.IsSuccess == false)
             {
+                _logger.Log("Failed to initial rebuild");
                 return;
             }
             _logger.LogSeperateLine();
-            SortedSet<string> sourceFilenames = CompileFileListExtractor.GetFilenames(startBuildResult.Outputs);
+            SortedSet<string> sourceFilenames = CompileFileListExtractor.GetFilenames(initialRebuildResult.Outputs);
             sourceFilenames = Util.FilterOut(sourceFilenames, _config.FilenameFilters);
             if (sourceFilenames.Count <= 0)
             {
