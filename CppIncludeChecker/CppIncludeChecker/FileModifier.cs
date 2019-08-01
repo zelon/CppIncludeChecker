@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace CppIncludeChecker
@@ -12,10 +13,12 @@ namespace CppIncludeChecker
         public string OriginalContent { get; private set; }
         private byte[] _originalContentBytes;
         private FileAttributes _originalFileAttributes;
+        private Encoding _writeEncoding;
 
-        public FileModifier(string filename)
+        public FileModifier(string filename, Encoding writeEncoding)
         {
             Filename = filename;
+            _writeEncoding = writeEncoding;
             _originalFileAttributes = File.GetAttributes(Filename);
 
             _originalContentBytes = File.ReadAllBytes(Filename);
@@ -38,8 +41,14 @@ namespace CppIncludeChecker
             {
                 result = RemoveIncludeLine(result, text);
             }
-            File.WriteAllText(Filename, result);
-
+            if (_writeEncoding == null)
+            {
+                File.WriteAllText(Filename, result);
+            }
+            else
+            {
+                File.WriteAllText(Filename, result, _writeEncoding);
+            }
         }
 
         public void RevertAndWrite()

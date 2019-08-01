@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 
 namespace CppIncludeChecker
 {
@@ -9,6 +10,7 @@ namespace CppIncludeChecker
         public string MsBuildCmdPath { get; set; }
         public string SolutionFilePath { get; set; }
         public bool ApplyChange { get; set; }
+        public Encoding ApplyChangeEncoding { get; set; }
         public string ExecCmdPath { get; set; }
         public bool IgnoreSelfHeaderInclude { get; set; }
         public int? MaxCheckFileCount { get; set; }
@@ -29,6 +31,14 @@ namespace CppIncludeChecker
             logger.Log("SolutionFile: " + SolutionFilePath);
             logger.Log("MsBuildCmdPath: " + MsBuildCmdPath);
             logger.Log("ApplyChange: " + ApplyChange);
+            if (ApplyChangeEncoding == null)
+            {
+                logger.Log("ApplyChangeEncoding: (not set)");
+            }
+            else
+            {
+                logger.Log("ApplyChangeEncoding: " + ApplyChangeEncoding.ToString());
+            }
             logger.Log("ExecCmdPath: " + ExecCmdPath);
             logger.Log("IgnoreSelfHeaderInclude: " + IgnoreSelfHeaderInclude);
             logger.Log("MaxCheckFileCount: " + MaxCheckFileCount);
@@ -76,6 +86,13 @@ namespace CppIncludeChecker
                 if (arg == "--applychange")
                 {
                     config.ApplyChange = true;
+                    continue;
+                }
+                testString = "--apply_encoding:";
+                if (arg.StartsWith(testString))
+                {
+                    
+                    config.ApplyChangeEncoding = Encoding.GetEncoding(arg.Substring(testString.Length));
                     continue;
                 }
                 testString = "--exec:";

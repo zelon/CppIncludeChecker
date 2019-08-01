@@ -59,7 +59,7 @@ namespace CppIncludeChecker
                 if (_config.ApplyChange)
                 {
                     _logger.Log(string.Format("Applying {0}:{1}", filename, includeLine));
-                    FileModifier fileModifier = new FileModifier(filename);
+                    FileModifier fileModifier = new FileModifier(filename, _config.ApplyChangeEncoding);
                     fileModifier.RemoveAndWrite(includeLine);
                 }
             }
@@ -102,7 +102,7 @@ namespace CppIncludeChecker
                 }
                 ++checkedFileCount;
 
-                FileModifier fileModifier = new FileModifier(filename);
+                FileModifier fileModifier = new FileModifier(filename, _config.ApplyChangeEncoding);
                 List<string> includeLines = IncludeLineAnalyzer.Analyze(fileModifier.OriginalContent);
                 includeLines = Util.FilterOut(includeLines, _config.IncludeFilters);
                 if (includeLines.Count <= 0)
