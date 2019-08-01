@@ -6,7 +6,7 @@ using System.Text.RegularExpressions;
 
 namespace CppIncludeChecker
 {
-    public class FileModifier
+    public class FileModifier : System.IDisposable
     {
         public List<string> RemovedStrings { get; private set; }
         public string Filename { get; private set; }
@@ -14,6 +14,7 @@ namespace CppIncludeChecker
         private byte[] _originalContentBytes;
         private FileAttributes _originalFileAttributes;
         private Encoding _writeEncoding;
+        private bool _applyPermanently = false;
 
         public FileModifier(string filename, Encoding writeEncoding)
         {
@@ -23,6 +24,20 @@ namespace CppIncludeChecker
 
             _originalContentBytes = File.ReadAllBytes(Filename);
             OriginalContent = File.ReadAllText(Filename);
+        }
+
+        public void Dispose()
+        {
+            if (_applyPermanently)
+            {
+                return;
+            }
+            RevertAndWrite();
+        }
+
+        public void SetApplyPermanently()
+        {
+            _applyPermanently = true;
         }
 
         public void RemoveAndWrite(string text)

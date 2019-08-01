@@ -63,8 +63,11 @@ namespace CppIncludeChecker
                 if (_config.ApplyChange)
                 {
                     _logger.Log(string.Format("Applying {0}:{1}", filename, includeLine));
-                    FileModifier fileModifier = new FileModifier(filename, _config.ApplyChangeEncoding);
-                    fileModifier.RemoveAndWrite(includeLine);
+                    using (FileModifier fileModifier = new FileModifier(filename, _config.ApplyChangeEncoding))
+                    {
+                        fileModifier.RemoveAndWrite(includeLine);
+                        fileModifier.SetApplyPermanently();
+                    }
                 }
             }
             // Some changes can break the build. So rebuild again
@@ -113,15 +116,20 @@ namespace CppIncludeChecker
                 }
                 _logger.Log(checkingMsg + string.Format(" Checking Filename: {0}", filename));
 
-                FileModifier fileModifier = new FileModifier(filename, _config.ApplyChangeEncoding);
-                List<string> includeLines = IncludeLineAnalyzer.Analyze(fileModifier.OriginalContent);
+                List<string> includeLines = null;
+                using (FileModifier fileModifier = new FileModifier(filename, _config.ApplyChangeEncoding))
+                {
+                    includeLines = IncludeLineAnalyzer.Analyze(fileModifier.OriginalContent);
+                }
                 includeLines = Util.FilterOut(includeLines, _config.IncludeFilters);
                 if (includeLines.Count <= 0)
                 {
-                    _logger.Log(filename + " has no include line");
+                    _logger.Log(string.Format("  + {0} has no include line", filename));
                     continue;
                 }
 
+                SortedSet<string> oneLineNeedlessIncludeLiness = new SortedSet<string>();
+                // each line removing build test
                 foreach (string includeLine in includeLines)
                 {
                     if (_config.IgnoreSelfHeaderInclude && Util.IsSelfHeader(filename, includeLine))
@@ -130,19 +138,53 @@ namespace CppIncludeChecker
                         continue;
                     }
                     _logger.LogWithoutEndline(string.Format("  + testing : {0} ...", includeLine));
-                    fileModifier.RemoveAndWrite(includeLine);
-                    var testBuildResult = _builder.Build();
-                    if (testBuildResult.IsSuccess)
+                    using (var fileModifier = new FileModifier(filename, _config.ApplyChangeEncoding))
                     {
-                        _logger.LogWithoutLogTime(string.Format(" ({0} build time) ----> [[[[[[CAN BE REMOVED]]]]]]", testBuildResult.GetBuildDurationString()));
+                        fileModifier.RemoveAndWrite(includeLine);
+                        BuildResult testBuildResult = _builder.Build();
+                        if (testBuildResult.IsSuccess)
+                        {
+                            _logger.LogWithoutLogTime(string.Format(" ({0} build time) ----> removing candidate", testBuildResult.GetBuildDurationString()));
+                            oneLineNeedlessIncludeLiness.Add(includeLine);
+                        }
+                        else
+                        {
+                            _logger.LogWithoutLogTime(string.Format(" ({0} build time) ----> not removing candidate", testBuildResult.GetBuildDurationString()));
+                        }
+                    }
+                }
+                // integrate build test because removing two line together cause build error
+                while (oneLineNeedlessIncludeLiness.Count > 0)
+                {
+                    using (FileModifier fileModifier = new FileModifier(filename, _config.ApplyChangeEncoding))
+                    {
+                        List<string> integratedIncludeLines = new List<string>();
+                        foreach (string includeLine in oneLineNeedlessIncludeLiness)
+                        {
+                            integratedIncludeLines.Add(includeLine);
+                        }
+                        fileModifier.RemoveAndWrite(integratedIncludeLines);
+                        _logger.LogWithoutEndline(string.Format("  + testing integrated : {0} ...", string.Join(',', integratedIncludeLines)));
+                        BuildResult integrateTestBuildResult = _builder.Build();
+                        if (integrateTestBuildResult.IsSuccess)
+                        {
+                            _logger.LogWithoutLogTime(string.Format(" ({0} build time) ----> BUILD SUCCESS", integrateTestBuildResult.GetBuildDurationString()));
+                            break;
+                        }
+                        string removingIncludeLine = oneLineNeedlessIncludeLiness.Min;
+                        _logger.LogWithoutLogTime(string.Format(" ({0} build time) ----> build failed,revert {1} and retry", integrateTestBuildResult.GetBuildDurationString(), removingIncludeLine));
+                        oneLineNeedlessIncludeLiness.Remove(removingIncludeLine);
+                    }
+                }
+                if (oneLineNeedlessIncludeLiness.Count > 0)
+                {
+                    _logger.LogSeperateLine();
+                    foreach (string includeLine in oneLineNeedlessIncludeLiness)
+                    {
+                        _logger.Log("  + found needless include line: " + includeLine);
                         needlessIncludeLines.Add(filename, includeLine);
                     }
-                    else
-                    {
-                        _logger.LogWithoutLogTime(string.Format(" ({0} build time) ----> required include", testBuildResult.GetBuildDurationString()));
-                    }
-                    _logger.LogToFile(string.Format("=== {0}:{1} build result ===", filename, includeLine), testBuildResult.Outputs);
-                    fileModifier.RevertAndWrite();
+                    _logger.LogSeperateLine();
                     if (needlessIncludeLines.IncludeLineInfos.Count >= _config.MaxSuccessRemoveCount)
                     {
                         _logger.Log("Reached maxsuccessremovecount,count: " + _config.MaxSuccessRemoveCount);
