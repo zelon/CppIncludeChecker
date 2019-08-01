@@ -9,6 +9,8 @@ namespace CppIncludeChecker
     {
         public string MsBuildCmdPath { get; set; }
         public string SolutionFilePath { get; set; }
+        public string BuildConfiguration { get; set; }
+        public string BuildPlatform { get; set; }
         public bool ApplyChange { get; set; }
         public Encoding ApplyChangeEncoding { get; set; }
         public string ExecCmdPath { get; set; }
@@ -29,6 +31,14 @@ namespace CppIncludeChecker
         public void Print(Logger logger)
         {
             logger.Log("SolutionFile: " + SolutionFilePath);
+            if (BuildConfiguration != null)
+            {
+                logger.Log("BuildConfiguration: " + BuildConfiguration);
+            }
+            if (BuildPlatform != null)
+            {
+                logger.Log("BuildPlatform: " + BuildPlatform);
+            }
             logger.Log("MsBuildCmdPath: " + MsBuildCmdPath);
             logger.Log("ApplyChange: " + ApplyChange);
             if (ApplyChangeEncoding != null)
@@ -71,14 +81,25 @@ namespace CppIncludeChecker
                 Console.WriteLine("Cannot find the solution file:{0}", config.SolutionFilePath);
                 return null;
             }
+            string testString = "";
             foreach (string arg in args)
             {
                 if (arg.StartsWith("--") == false)
                 {
                     continue;
                 }
-                string testString = "";
-
+                testString = "--build_configuration:";
+                if (arg.StartsWith(testString))
+                {
+                    config.BuildConfiguration = arg.Substring(testString.Length);
+                    continue;
+                }
+                testString = "--build_platform:";
+                if (arg.StartsWith(testString))
+                {
+                    config.BuildPlatform = arg.Substring(testString.Length);
+                    continue;
+                }
                 testString = "--msbuildenvpath:";
                 if (arg.StartsWith(testString))
                 {
@@ -152,7 +173,7 @@ namespace CppIncludeChecker
 
         public static void PrintUsage()
         {
-            Console.WriteLine(@"Usage: {0} SolutionFilePath --msbuildenvpath:""C:\Program Files(x86)\Microsoft Visual Studio\2017\Professional\Common7\Tools\VsMSBuildCmd.bat"" [--applychange] [--exec:""C:\Test\make_patch.bat""] [--ignoreselfheaderinclude] [--filenamefilter:xxxx.xxx]* [--includefilter:xxxx.h]*", Environment.CommandLine);
+            Console.WriteLine(@"Usage: {0} SolutionFilePath --msbuildenvpath:""C:\Program Files(x86)\Microsoft Visual Studio\2017\Professional\Common7\Tools\VsMSBuildCmd.bat"" [--build_configuration:Debug] [--build_platform:x64] [--applychange] [--apply_encoding:utf-8] [--exec:""C:\Test\make_patch.bat""] [--ignoreselfheaderinclude] [--filenamefilter:xxxx.xxx]* [--includefilter:xxxx.h]*", Environment.CommandLine);
         }
     }
 }

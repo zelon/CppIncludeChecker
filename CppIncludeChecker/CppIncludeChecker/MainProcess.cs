@@ -12,7 +12,7 @@ namespace CppIncludeChecker
         {
             _config = config;
             _logger = logger;
-            _builder = new Builder(_config.SolutionFilePath, builderCommand);
+            _builder = new Builder(builderCommand, _config.SolutionFilePath, _config.BuildConfiguration, _config.BuildPlatform);
         }
 
 		public void Start()
