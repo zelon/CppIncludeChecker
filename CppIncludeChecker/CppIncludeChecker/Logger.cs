@@ -45,7 +45,13 @@ namespace CppIncludeChecker
 			}
 		}
 
-		public void LogWithoutEndline(string text)
+        public void LogWithoutLogTime(string text)
+        {
+            Console.WriteLine(text);
+            Debug.WriteLine(text);
+        }
+
+        public void LogWithoutEndline(string text)
 		{
 			text = string.Format("{0}: {1}", DateTime.Now.ToLongTimeString(), text);
 

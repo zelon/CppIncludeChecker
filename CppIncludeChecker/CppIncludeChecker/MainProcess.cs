@@ -32,6 +32,8 @@ namespace CppIncludeChecker
 				_logger.Log("Cannot extract any file");
                 return;
             }
+            _logger.Log("Collected source file count: " + sourceFilenames.Count);
+            _logger.LogSeperateLine();
             NeedlessIncludeLines needlessIncludeLines = TryRemoveIncludeAndCollectChanges(sourceFilenames);
             _logger.LogSeperateLine();
             if (needlessIncludeLines.IncludeLineInfos.Count == 0)
@@ -103,6 +105,13 @@ namespace CppIncludeChecker
                 }
                 ++checkedFileCount;
 
+                string checkingMsg = string.Format("[{0}/{1}]", checkedFileCount, filenames.Count);
+                if (_config.MaxCheckFileCount != null)
+                {
+                    checkingMsg += string.Format("[max_limited {0}]", _config.MaxCheckFileCount);
+                }
+                _logger.Log(checkingMsg + string.Format(" Checking Filename: {0}", filename));
+
                 FileModifier fileModifier = new FileModifier(filename, _config.ApplyChangeEncoding);
                 List<string> includeLines = IncludeLineAnalyzer.Analyze(fileModifier.OriginalContent);
                 includeLines = Util.FilterOut(includeLines, _config.IncludeFilters);
@@ -111,7 +120,7 @@ namespace CppIncludeChecker
                     _logger.Log(filename + " has no include line");
                     continue;
                 }
-                _logger.Log("Checking Filename: " + filename);
+
                 foreach (string includeLine in includeLines)
                 {
                     if (_config.IgnoreSelfHeaderInclude && Util.IsSelfHeader(filename, includeLine))
@@ -119,17 +128,17 @@ namespace CppIncludeChecker
                         _logger.Log(string.Format("  + skipping: {0} by IgnoreSelfHeader", includeLine));
                         continue;
                     }
-                    _logger.LogWithoutEndline(string.Format("  + testing : {0} .... ", includeLine));
+                    _logger.LogWithoutEndline(string.Format("  + testing : {0} ...", includeLine));
                     fileModifier.RemoveAndWrite(includeLine);
                     var testBuildResult = _builder.Build();
                     if (testBuildResult.IsSuccess)
                     {
-                        _logger.Log(string.Format(" ({0} testing build time) ----> [[[[[[CAN BE REMOVED]]]]]]", testBuildResult.GetBuildDurationString()));
+                        _logger.LogWithoutLogTime(string.Format(" ({0} build time) ----> [[[[[[CAN BE REMOVED]]]]]]", testBuildResult.GetBuildDurationString()));
                         needlessIncludeLines.Add(filename, includeLine);
                     }
                     else
                     {
-                        _logger.Log(string.Format(" ({0} testing build time) ----> Cannot be removed", testBuildResult.GetBuildDurationString()));
+                        _logger.LogWithoutLogTime(string.Format(" ({0} build time) ----> required include", testBuildResult.GetBuildDurationString()));
                     }
                     _logger.LogToFile(string.Format("=== {0}:{1} build result ===", filename, includeLine), testBuildResult.Outputs);
                     fileModifier.RevertAndWrite();
