@@ -24,6 +24,7 @@ namespace CppIncludeChecker
                 _logger.Log("Failed to initial rebuild");
                 return;
             }
+            _logger.Log("Build configuration: " + initialRebuildResult.GetBuildSolutionConfiguration());
             _logger.LogSeperateLine();
             SortedSet<string> sourceFilenames = CompileFileListExtractor.GetFilenames(initialRebuildResult.Outputs);
             sourceFilenames = Util.FilterOut(sourceFilenames, _config.FilenameFilters);
