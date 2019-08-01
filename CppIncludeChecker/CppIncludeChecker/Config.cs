@@ -31,18 +31,20 @@ namespace CppIncludeChecker
             logger.Log("SolutionFile: " + SolutionFilePath);
             logger.Log("MsBuildCmdPath: " + MsBuildCmdPath);
             logger.Log("ApplyChange: " + ApplyChange);
-            if (ApplyChangeEncoding == null)
-            {
-                logger.Log("ApplyChangeEncoding: (not set)");
-            }
-            else
+            if (ApplyChangeEncoding != null)
             {
                 logger.Log("ApplyChangeEncoding: " + ApplyChangeEncoding.ToString());
             }
             logger.Log("ExecCmdPath: " + ExecCmdPath);
             logger.Log("IgnoreSelfHeaderInclude: " + IgnoreSelfHeaderInclude);
-            logger.Log("MaxCheckFileCount: " + MaxCheckFileCount);
-            logger.Log("MaxSuccessRemoveCount: " + MaxSuccessRemoveCount);
+            if (MaxCheckFileCount != null)
+            {
+                logger.Log("MaxCheckFileCount: " + MaxCheckFileCount);
+            }
+            if (MaxSuccessRemoveCount != null)
+            {
+                logger.Log("MaxSuccessRemoveCount: " + MaxSuccessRemoveCount);
+            }
             foreach (string filter in FilenameFilters)
             {
                 logger.Log("IgnoreFileFilter: " + filter);
