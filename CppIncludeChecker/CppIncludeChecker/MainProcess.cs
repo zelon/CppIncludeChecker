@@ -176,21 +176,29 @@ namespace CppIncludeChecker
                         oneLineNeedlessIncludeLiness.Remove(removingIncludeLine);
                     }
                 }
-                if (oneLineNeedlessIncludeLiness.Count > 0)
+                if (oneLineNeedlessIncludeLiness.Count <= 0)
                 {
-                    _logger.LogSeperateLine();
-                    foreach (string includeLine in oneLineNeedlessIncludeLiness)
-                    {
-                        _logger.Log("  + found needless include line: " + includeLine);
-                        needlessIncludeLines.Add(filename, includeLine);
-                    }
-                    _logger.LogSeperateLine();
+                    continue;
+                }
+                _logger.LogSeperateLine();
+                _logger.Log(string.Format("| Checked Filename: {0}", filename));
+                foreach (string includeLine in oneLineNeedlessIncludeLiness)
+                {
+                    _logger.Log("|   + found needless include: " + includeLine);
+                    needlessIncludeLines.Add(filename, includeLine);
+                }
+                string foundCountMsg = "| ----> Found needless count: " + needlessIncludeLines.IncludeLineInfos.Count;
+                if (_config.MaxSuccessRemoveCount != null)
+                {
+                    foundCountMsg += string.Format("/{0}", _config.MaxSuccessRemoveCount);
                     if (needlessIncludeLines.IncludeLineInfos.Count >= _config.MaxSuccessRemoveCount)
                     {
                         _logger.Log("Reached maxsuccessremovecount,count: " + _config.MaxSuccessRemoveCount);
                         return needlessIncludeLines;
                     }
                 }
+                _logger.Log(foundCountMsg);
+                _logger.LogSeperateLine();
             }
             return needlessIncludeLines;
         }
