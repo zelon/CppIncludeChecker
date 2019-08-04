@@ -46,6 +46,14 @@ namespace CppIncludeChecker
             needlessIncludeLines.Print(_logger);
 
             _logger.LogSeperateLine();
+            _logger.LogSeperateLine();
+            _logger.Log(" Start of final integrated build test");
+            _logger.LogSeperateLine();
+            _logger.LogSeperateLine();
+
+            needlessIncludeLines = FinalIntegrationTest(needlessIncludeLines);
+
+            _logger.LogSeperateLine();
 
             foreach (var info in needlessIncludeLines.IncludeLineInfos)
             {
@@ -70,7 +78,7 @@ namespace CppIncludeChecker
                     }
                 }
             }
-            // Some changes can break the build. So rebuild again
+            // Some changes can break the rebuild. So rebuild again
             BuildResult lastBuildResult = RebuildAtLast();
             if (lastBuildResult.IsSuccess)
             {
@@ -187,7 +195,7 @@ namespace CppIncludeChecker
                     _logger.Log("|   + found needless include: " + includeLine);
                     needlessIncludeLines.Add(filename, includeLine);
                 }
-                string foundCountMsg = "| ----> Found needless count: " + needlessIncludeLines.IncludeLineInfos.Count;
+                string foundCountMsg = "|   ----> Found needless count: " + needlessIncludeLines.IncludeLineInfos.Count;
                 if (_config.MaxSuccessRemoveCount != null)
                 {
                     foundCountMsg += string.Format("/{0}", _config.MaxSuccessRemoveCount);
@@ -203,6 +211,56 @@ namespace CppIncludeChecker
             return needlessIncludeLines;
         }
 
+        private NeedlessIncludeLines FinalIntegrationTest(NeedlessIncludeLines needlessIncludeLines)
+        {
+            Dictionary<string, List<string>> filenameAndIncludes = new Dictionary<string, List<string>>();
+            foreach (var info in needlessIncludeLines.IncludeLineInfos)
+            {
+                if (filenameAndIncludes.ContainsKey(info.Filename) == false)
+                {
+                    filenameAndIncludes.Add(info.Filename, new List<string>());
+                }
+                filenameAndIncludes[info.Filename].Add(info.IncludeLine);
+            }
+            while (filenameAndIncludes.Count > 0)
+            {
+                _logger.LogSeperateLine();
+                _logger.Log("| Final integration test");
+                List<FileModifier> fileModifiers = new List<FileModifier>();
+                foreach (var filenameAndInclude in filenameAndIncludes)
+                {
+                    string msg = string.Format("|  + {0}:{1}", filenameAndInclude.Key, string.Join(',', filenameAndInclude.Value));
+                    _logger.Log(msg);
+                    FileModifier fileModifier = new FileModifier(filenameAndInclude.Key, _config.ApplyChangeEncoding);
+                    fileModifier.RemoveAndWrite(filenameAndInclude.Value);
+                }
+                var buildResult = _builder.Build();
+                _logger.Log("|  : Build Duration: " + buildResult.GetBuildDurationString());
+                foreach (var fileModifier in fileModifiers)
+                {
+                    fileModifier.RevertAndWrite();
+                }
+                if (buildResult.IsSuccess)
+                {
+                    _logger.Log("|  ----> Final Integration Test Build Success");
+                    break;
+                }
+                filenameAndIncludes.Remove(filenameAndIncludes.Keys.GetEnumerator().Current);
+            }
+            NeedlessIncludeLines output = new NeedlessIncludeLines();
+            if (filenameAndIncludes.Count <= 0)
+            {
+                return output;
+            }
+            foreach (var result in filenameAndIncludes)
+            {
+                foreach (var line in result.Value)
+                {
+                    output.Add(result.Key, line);
+                }
+            }
+            return output;
+        }
         private BuildResult RebuildAtLast()
         {
 			_logger.Log("Start of Final Rebuild");
