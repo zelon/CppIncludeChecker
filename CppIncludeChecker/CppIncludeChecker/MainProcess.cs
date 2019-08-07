@@ -233,6 +233,7 @@ namespace CppIncludeChecker
                     _logger.Log(msg);
                     FileModifier fileModifier = new FileModifier(filenameAndInclude.Key, _config.ApplyChangeEncoding);
                     fileModifier.RemoveAndWrite(filenameAndInclude.Value);
+                    fileModifiers.Add(fileModifier);
                 }
                 var buildResult = _builder.Build();
                 _logger.Log("|  : Build Duration: " + buildResult.GetBuildDurationString());
@@ -244,8 +245,17 @@ namespace CppIncludeChecker
                 {
                     _logger.Log("|  ----> Final Integration Test Build Success");
                     break;
+                } else
+                {
+                    _logger.Log("|  ----> Final Integration Test Build Failed");
                 }
-                filenameAndIncludes.Remove(filenameAndIncludes.Keys.GetEnumerator().Current);
+                foreach (var temp in filenameAndIncludes)
+                {
+                    string filename = temp.Key;
+                    _logger.Log(string.Format("|  ----> Remove {0} and retrying...", filename));
+                    filenameAndIncludes.Remove(filename);
+                    break;
+                }
             }
             NeedlessIncludeLines output = new NeedlessIncludeLines();
             if (filenameAndIncludes.Count <= 0)
