@@ -94,6 +94,80 @@ Build succeeded.
         }
 
         [TestMethod]
+        public void TestExtractBuildErrorFiles()
+        {
+            string log = @"Microsoft (R) Build Engine version 16.1.76+g14b0a930a7 for .NET Framework
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+Build started 2019-08-07 ?? 10:44:04.
+     1>Project ""C:\git\CppIncludeChecker\TestCppSolution\TestCppSolution.sln"" on node 1 (Rebuild target(s)).
+     1>ValidateSolutionConfiguration:
+         Building solution configuration ""Debug|x64"".
+     1>Project ""C:\git\CppIncludeChecker\TestCppSolution\TestCppSolution.sln"" (1) is building ""C:\git\CppIncludeChecker\TestCppSolution\StaticLib1\StaticLib1.vcxproj"" (2) on node 2 (Rebuild target(s)).
+     2>_PrepareForClean:
+         Deleting file ""x64\Debug\StaticLib1.tlog\StaticLib1.lastbuildstate"".
+     1>Project ""C:\git\CppIncludeChecker\TestCppSolution\TestCppSolution.sln"" (1) is building ""C:\git\CppIncludeChecker\TestCppSolution\TestCppSolution\TestCppSolution.vcxproj"" (3) on node 1 (Rebuild target(s)).
+     3>_PrepareForClean:
+         Deleting file ""x64\Debug\TestCppSolution.tlog\TestCppSolution.lastbuildstate"".
+     2>InitializeBuildStatus:
+         Creating ""x64\Debug\StaticLib1.tlog\unsuccessfulbuild"" because ""AlwaysCreate"" was specified.
+       VcpkgTripletSelection:
+         Using triplet ""x64-windows"" from ""C:\git\vcpkg\installed\x64-windows\""
+     3>InitializeBuildStatus:
+         Creating ""x64\Debug\TestCppSolution.tlog\unsuccessfulbuild"" because ""AlwaysCreate"" was specified.
+       VcpkgTripletSelection:
+         Using triplet ""x64-windows"" from ""C:\git\vcpkg\installed\x64-windows\""
+     2>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Tools\MSVC\14.21.27702\bin\HostX86\x64\CL.exe /c /I""C:\git\vcpkg\installed\x64-windows\include"" /ZI /JMC /nologo /W3 /WX- /diagnostics:column /sdl /Od /D _DEBUG /D _LIB /D _UNICODE /D UNICODE /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /permissive- /Zc:wchar_t /Zc:forScope /Zc:inline /Yc""stdafx.h"" /Fp""x64\Debug\StaticLib1.pch"" /Fo""x64\Debug\\"" /Fd""x64\Debug\StaticLib1.pdb"" /Gd /TP /FC /errorReport:queue stdafx.cpp
+     3>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Tools\MSVC\14.21.27702\bin\HostX86\x64\CL.exe /c /I""C:\git\vcpkg\installed\x64-windows\include"" /ZI /JMC /nologo /W3 /WX- /diagnostics:column /sdl /Od /D _DEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /permissive- /Zc:wchar_t /Zc:forScope /Zc:inline /Yc""stdafx.h"" /Fp""x64\Debug\TestCppSolution.pch"" /Fo""x64\Debug\\"" /Fd""x64\Debug\vc142.pdb"" /Gd /TP /FC /errorReport:queue /bigobj /volatile:iso stdafx.cpp
+     2>ClCompile:
+         stdafx.cpp
+     3>ClCompile:
+         stdafx.cpp
+     2>Lib:
+         C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Tools\MSVC\14.21.27702\bin\HostX86\x64\Lib.exe /OUT:""C:\git\CppIncludeChecker\TestCppSolution\x64\Debug\StaticLib1.lib"" /NOLOGO /MACHINE:X64 x64\Debug\stdafx.obj
+         StaticLib1.vcxproj -> C:\git\CppIncludeChecker\TestCppSolution\x64\Debug\StaticLib1.lib
+       AppLocalFromInstalled:
+         C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -ExecutionPolicy Bypass -noprofile -File ""C:\git\vcpkg\scripts\buildsystems\msbuild\applocal.ps1"" ""C:\git\CppIncludeChecker\TestCppSolution\x64\Debug\StaticLib1.lib"" ""C:\git\vcpkg\installed\x64-windows\debug\bin"" ""x64\Debug\StaticLib1.tlog\StaticLib1.write.1u.tlog"" ""x64\Debug\vcpkg.applocal.log""
+     3>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Tools\MSVC\14.21.27702\bin\HostX86\x64\CL.exe /c /I""C:\git\vcpkg\installed\x64-windows\include"" /ZI /JMC /nologo /W3 /WX- /diagnostics:column /sdl /Od /D _DEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /permissive- /Zc:wchar_t /Zc:forScope /Zc:inline /Yu""stdafx.h"" /Fp""x64\Debug\TestCppSolution.pch"" /Fo""x64\Debug\\"" /Fd""x64\Debug\vc142.pdb"" /Gd /TP /FC /errorReport:queue /bigobj /volatile:iso ..\Module2.cpp SubDirectory\Module1.cpp TestCppSolution.cpp
+         Module2.cpp
+         Module1.cpp
+     3>C:\git\CppIncludeChecker\TestCppSolution\TestCppSolution\SubDirectory\Module1.cpp(11,2): error C2065:  'kk': undeclared identifier [C:\git\CppIncludeChecker\TestCppSolution\TestCppSolution\TestCppSolution.vcxproj]
+         TestCppSolution.cpp
+         Generating Code...
+     3>C:\git\CppIncludeChecker\TestCppSolution\TestCppSolution\SubDirectory\Module1.cpp(12,2): error C2146:  syntax error: missing ';' before identifier 'Module2' [C:\git\CppIncludeChecker\TestCppSolution\TestCppSolution\TestCppSolution.vcxproj]
+     2>CopyFilesToOutputDirectory:
+         Copying file from ""C:\git\CppIncludeChecker\TestCppSolution\StaticLib1\x64\Debug\StaticLib1.pdb"" to ""C:\git\CppIncludeChecker\TestCppSolution\x64\Debug\StaticLib1.pdb"".
+       FinalizeBuildStatus:
+         Deleting file ""x64\Debug\StaticLib1.tlog\unsuccessfulbuild"".
+         Touching ""x64\Debug\StaticLib1.tlog\StaticLib1.lastbuildstate"".
+     2>Done Building Project ""C:\git\CppIncludeChecker\TestCppSolution\StaticLib1\StaticLib1.vcxproj"" (Rebuild target(s)).
+     3>Done Building Project ""C:\git\CppIncludeChecker\TestCppSolution\TestCppSolution\TestCppSolution.vcxproj"" (Rebuild target(s)) -- FAILED.
+     1>Done Building Project ""C:\git\CppIncludeChecker\TestCppSolution\TestCppSolution.sln"" (Rebuild target(s)) -- FAILED.
+
+Build FAILED.
+
+       ""C:\git\CppIncludeChecker\TestCppSolution\TestCppSolution.sln"" (Rebuild target) (1) ->
+       ""C:\git\CppIncludeChecker\TestCppSolution\TestCppSolution\TestCppSolution.vcxproj"" (Rebuild target) (3) ->
+       (ClCompile target) ->
+         C:\git\CppIncludeChecker\TestCppSolution\TestCppSolution\SubDirectory\Module1.cpp(11,2): error C2065:  'kk': undeclared identifier [C:\git\CppIncludeChecker\TestCppSolution\TestCppSolution\TestCppSolution.vcxproj]
+         C:\git\CppIncludeChecker\TestCppSolution\TestCppSolution\SubDirectory\Module1.cpp(12,2): error C2146:  syntax error: missing ';' before identifier 'Module2' [C:\git\CppIncludeChecker\TestCppSolution\TestCppSolution\TestCppSolution.vcxproj]
+
+    0 Warning(s)
+    2 Error(s)";
+            List<string> outputs = new List<string>();
+            foreach (string line in log.Split("\n"))
+            {
+                outputs.Add(line);
+            }
+            var fileList = BuildErrorFileListExtractor.Extract(outputs);
+            Assert.IsTrue(fileList.Count == 1);
+            Assert.IsTrue(fileList.Min == @"C:\git\CppIncludeChecker\TestCppSolution\TestCppSolution\SubDirectory\Module1.cpp");
+        }
+
+        [TestMethod]
         public void TestExtractInclude()
         {
             string fileContent = @"

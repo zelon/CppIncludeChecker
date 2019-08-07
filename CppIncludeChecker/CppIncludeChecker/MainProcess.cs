@@ -249,12 +249,23 @@ namespace CppIncludeChecker
                 {
                     _logger.Log("|  ----> Final Integration Test Build Failed");
                 }
+                SortedSet<string> buildErrorFilenames = BuildErrorFileListExtractor.Extract(buildResult.Outputs);
                 foreach (var temp in filenameAndIncludes)
                 {
-                    string filename = temp.Key;
-                    _logger.Log(string.Format("|  ----> Remove {0} and retrying...", filename));
-                    filenameAndIncludes.Remove(filename);
-                    break;
+                    if (buildErrorFilenames.Count > 0 && filenameAndIncludes.ContainsKey(buildErrorFilenames.Min))
+                    {
+                        string filename = buildErrorFilenames.Min;
+                        _logger.Log(string.Format("|  ----> Remove {0} and retrying...", filename));
+                        filenameAndIncludes.Remove(filename);
+                        break;
+                    }
+                    else
+                    {
+                        string filename = temp.Key;
+                        _logger.Log(string.Format("|  ----> Remove {0} and retrying...", filename));
+                        filenameAndIncludes.Remove(filename);
+                        break;
+                    }
                 }
             }
             NeedlessIncludeLines output = new NeedlessIncludeLines();
