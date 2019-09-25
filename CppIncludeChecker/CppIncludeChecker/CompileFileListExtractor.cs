@@ -9,7 +9,7 @@ namespace CppIncludeChecker
 {
     public class CompileFileListExtractor
     {
-        public static SortedSet<string> GetFilenames(List<string> outputs)
+        public static List<string> GetFilenames(List<string> outputs)
         {
             SortedSet<string> filenames = new SortedSet<string>();
             var logsByNode = CollectLogByNode(outputs);
@@ -36,7 +36,7 @@ namespace CppIncludeChecker
                     filenames.UnionWith(MakeFullPathAndVerify(projectFileFullPath, filenamesFromLine));
                 }
             }
-            return filenames;
+            return new List<string>(filenames);
         }
 
         private static SortedSet<string> MakeFullPathAndVerify(string projectFileFullPath, List<string> filenames)

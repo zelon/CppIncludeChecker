@@ -5,31 +5,9 @@ namespace CppIncludeChecker
 {
     public class Util
     {
-        public static List<string> FilterOut(List<string> sources, List<string> by)
+        public static List<string> FilterOut(IEnumerable<string> sources, IEnumerable<string> by)
         {
             List<string> output = new List<string>();
-            foreach (string include in sources)
-            {
-                bool isInFilter = false;
-                foreach (string filter in by)
-                {
-                    if (include.Contains(filter))
-                    {
-                        isInFilter = true;
-                        break;
-                    }
-                }
-                if (isInFilter == false)
-                {
-                    output.Add(include);
-                }
-            }
-            return output;
-        }
-
-        public static SortedSet<string> FilterOut(SortedSet<string> sources, List<string> by)
-        {
-            SortedSet<string> output = new SortedSet<string>();
             foreach (string include in sources)
             {
                 bool isInFilter = false;
@@ -59,6 +37,19 @@ namespace CppIncludeChecker
 
 
             return sourceFilenameOnly == includeLineFilenameOnly;
+        }
+
+        public static void Shuffle(List<string> list)
+        {
+            int count = list.Count;
+            System.Random random = new System.Random();
+            for (int i = 0; i < count; ++i)
+            {
+                int changeIndex = random.Next(list.Count);
+                string temp = list[i];
+                list[i] = list[changeIndex];
+                list[changeIndex] = temp;
+            }
         }
     }
 }

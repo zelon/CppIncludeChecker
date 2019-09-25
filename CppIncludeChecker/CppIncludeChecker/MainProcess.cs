@@ -26,7 +26,7 @@ namespace CppIncludeChecker
             }
             _logger.Log("Build configuration: " + initialRebuildResult.GetBuildSolutionConfiguration());
             _logger.LogSeperateLine();
-            SortedSet<string> sourceFilenames = CompileFileListExtractor.GetFilenames(initialRebuildResult.Outputs);
+            List<string> sourceFilenames = CompileFileListExtractor.GetFilenames(initialRebuildResult.Outputs);
             sourceFilenames = Util.FilterOut(sourceFilenames, _config.FilenameFilters);
             if (sourceFilenames.Count <= 0)
             {
@@ -35,6 +35,12 @@ namespace CppIncludeChecker
             }
             _logger.Log("Collected source file count: " + sourceFilenames.Count);
             _logger.LogSeperateLine();
+
+            if (_config.RandomSequenceTest)
+            {
+                Util.Shuffle(sourceFilenames);
+            }
+
             NeedlessIncludeLines needlessIncludeLines = TryRemoveIncludeAndCollectChanges(sourceFilenames);
             _logger.LogSeperateLine();
             if (needlessIncludeLines.IncludeLineInfos.Count == 0)
@@ -104,7 +110,7 @@ namespace CppIncludeChecker
             return buildResult;
         }
 
-        private NeedlessIncludeLines TryRemoveIncludeAndCollectChanges(SortedSet<string> filenames)
+        private NeedlessIncludeLines TryRemoveIncludeAndCollectChanges(List<string> filenames)
         {
             NeedlessIncludeLines needlessIncludeLines = new NeedlessIncludeLines();
             int checkedFileCount = 0;

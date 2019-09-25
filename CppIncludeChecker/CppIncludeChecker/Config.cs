@@ -19,6 +19,7 @@ namespace CppIncludeChecker
         public int? MaxSuccessRemoveCount { get; set; }
         public List<string> FilenameFilters { get; set; }
         public List<string> IncludeFilters { get; set; }
+        public bool RandomSequenceTest { get; set; }
 
         public Config()
         {
@@ -26,6 +27,7 @@ namespace CppIncludeChecker
             IgnoreSelfHeaderInclude = false;
             FilenameFilters = new List<string>();
             IncludeFilters = new List<string>();
+            RandomSequenceTest = false;
         }
 
         public void Print(Logger logger)
@@ -62,6 +64,10 @@ namespace CppIncludeChecker
             foreach (string filter in IncludeFilters)
             {
                 logger.Log("IgnoreIncludeFilter: " + filter);
+            }
+            if (RandomSequenceTest)
+            {
+                logger.Log("RandomSequenceTest: True");
             }
         }
 
@@ -151,6 +157,11 @@ namespace CppIncludeChecker
                 if (arg.StartsWith(testString))
                 {
                     config.IncludeFilters.Add(arg.Substring(testString.Length));
+                    continue;
+                }
+                if (arg == "--random_sequence")
+                {
+                    config.RandomSequenceTest = true;
                     continue;
                 }
             }
