@@ -6,6 +6,8 @@ namespace CppIncludeChecker
 	{
 		static void Main(string[] args)
 		{
+            string version = "1.0";
+            Console.WriteLine($"CppIncludeChecker version:{version}");
             Config config = Config.Parse(args);
             if (config == null)
             {
