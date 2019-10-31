@@ -24,6 +24,10 @@ namespace CppIncludeChecker
                 _logger.Log("Failed to initial rebuild");
                 return;
             }
+            if (StopMarker.StopRequested)
+            {
+                return;
+            }
             _logger.Log("Build configuration: " + initialRebuildResult.GetBuildSolutionConfiguration());
             _logger.LogSeperateLine();
             List<string> sourceFilenames = CompileFileListExtractor.GetFilenames(initialRebuildResult.Outputs);
@@ -42,6 +46,10 @@ namespace CppIncludeChecker
             }
 
             NeedlessIncludeLines needlessIncludeLines = TryRemoveIncludeAndCollectChanges(sourceFilenames);
+            if (StopMarker.StopRequested)
+            {
+                return;
+            }
             _logger.LogSeperateLine();
             if (needlessIncludeLines.IncludeLineInfos.Count == 0)
             {
@@ -58,7 +66,10 @@ namespace CppIncludeChecker
             _logger.LogSeperateLine();
 
             needlessIncludeLines = FinalIntegrationTest(needlessIncludeLines);
-
+            if (StopMarker.StopRequested)
+            {
+                return;
+            }
             _logger.LogSeperateLine();
 
             foreach (var info in needlessIncludeLines.IncludeLineInfos)
@@ -146,6 +157,10 @@ namespace CppIncludeChecker
                 // each line removing build test
                 foreach (string includeLine in includeLines)
                 {
+                    if (StopMarker.StopRequested)
+                    {
+                        return needlessIncludeLines;
+                    }
                     if (_config.IgnoreSelfHeaderInclude && Util.IsSelfHeader(filename, includeLine))
                     {
                         _logger.Log(string.Format("  + skipping: {0} by IgnoreSelfHeader", includeLine));
@@ -170,6 +185,10 @@ namespace CppIncludeChecker
                 // integrate build test because removing two line together cause build error
                 while (oneLineNeedlessIncludeLiness.Count > 0)
                 {
+                    if (StopMarker.StopRequested)
+                    {
+                        return needlessIncludeLines;
+                    }
                     using (FileModifier fileModifier = new FileModifier(filename, _config.ApplyChangeEncoding))
                     {
                         List<string> integratedIncludeLines = new List<string>();
@@ -230,6 +249,10 @@ namespace CppIncludeChecker
             }
             while (filenameAndIncludes.Count > 0)
             {
+                if (StopMarker.StopRequested)
+                {
+                    return null;
+                }
                 _logger.LogSeperateLine();
                 _logger.Log("| Final integration test");
                 List<FileModifier> fileModifiers = new List<FileModifier>();

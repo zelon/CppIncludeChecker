@@ -4,6 +4,13 @@ namespace CppIncludeChecker
 {
 	class Start
 	{
+        static void OnCancelKeyPressed(Object sender, ConsoleCancelEventArgs args)
+        {
+            Console.WriteLine("Stop requested. Waiting to stop......");
+            StopMarker.StopRequested = true;
+            args.Cancel = true;
+        }
+
 		static void Main(string[] args)
 		{
             string version = "1.0";
@@ -19,6 +26,9 @@ namespace CppIncludeChecker
                 Console.WriteLine("Cannot find builderCommand");
                 return;
             }
+
+            Console.CancelKeyPress += OnCancelKeyPressed;
+
             using (Logger logger = new Logger("CppIncludeChecker.log"))
             {
                 config.Print(logger);
