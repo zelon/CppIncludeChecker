@@ -184,7 +184,7 @@ namespace CppIncludeChecker
 
         public static void PrintUsage()
         {
-            Console.WriteLine(@"Usage: {0} SolutionFilePath --msbuildenvpath:""C:\Program Files(x86)\Microsoft Visual Studio\2017\Professional\Common7\Tools\VsMSBuildCmd.bat"" [--build_configuration:Debug] [--build_platform:x64] [--applychange] [--apply_encoding:utf-8] [--exec:""C:\Test\make_patch.bat""] [--ignoreselfheaderinclude] [--filenamefilter:xxxx.xxx]* [--includefilter:xxxx.h]*", Environment.CommandLine);
+            Console.WriteLine(@"Usage: CppIncludeChecker.exe SolutionFilePath --msbuildenvpath:""C:\Program Files(x86)\Microsoft Visual Studio\2017\Professional\Common7\Tools\VsMSBuildCmd.bat"" [--build_configuration:Debug] [--build_platform:x64] [--applychange] [--apply_encoding:utf-8] [--exec:""C:\Test\make_patch.bat""] [--ignoreselfheaderinclude] [--filenamefilter:xxxx.xxx]* [--includefilter:xxxx.h]*");
         }
     }
 }
