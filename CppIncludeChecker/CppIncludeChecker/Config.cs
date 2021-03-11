@@ -11,6 +11,7 @@ namespace CppIncludeChecker
         public string SolutionFilePath { get; set; }
         public string BuildConfiguration { get; set; }
         public string BuildPlatform { get; set; }
+        public string CheckingDirectory { get; set; }
         public bool ApplyChange { get; set; }
         public Encoding ApplyChangeEncoding { get; set; }
         public string ExecCmdPath { get; set; }
@@ -20,7 +21,7 @@ namespace CppIncludeChecker
         public List<string> FilenameFilters { get; set; }
         public List<string> IncludeFilters { get; set; }
         public bool RandomSequenceTest { get; set; }
-
+        
         public Config()
         {
             ApplyChange = false;
@@ -40,6 +41,10 @@ namespace CppIncludeChecker
             if (BuildPlatform != null)
             {
                 logger.Log("BuildPlatform: " + BuildPlatform);
+            }
+            if (string.IsNullOrEmpty(CheckingDirectory) == false)
+            {
+                logger.Log("CheckingDirectory: " + CheckingDirectory);
             }
             logger.Log("MsBuildCmdPath: " + MsBuildCmdPath);
             logger.Log("ApplyChange: " + ApplyChange);
@@ -104,6 +109,12 @@ namespace CppIncludeChecker
                 if (arg.StartsWith(testString))
                 {
                     config.BuildPlatform = arg.Substring(testString.Length);
+                    continue;
+                }
+                testString = "--checking_directory:";
+                if (arg.StartsWith(testString))
+                {
+                    config.CheckingDirectory = arg.Substring(testString.Length);
                     continue;
                 }
                 testString = "--msbuildenvpath:";
@@ -184,7 +195,7 @@ namespace CppIncludeChecker
 
         public static void PrintUsage()
         {
-            Console.WriteLine(@"Usage: CppIncludeChecker.exe SolutionFilePath --msbuildenvpath:""C:\Program Files(x86)\Microsoft Visual Studio\2017\Professional\Common7\Tools\VsMSBuildCmd.bat"" [--build_configuration:Debug] [--build_platform:x64] [--applychange] [--apply_encoding:utf-8] [--exec:""C:\Test\make_patch.bat""] [--ignoreselfheaderinclude] [--filenamefilter:xxxx.xxx]* [--includefilter:xxxx.h]*");
+            Console.WriteLine(@"Usage: CppIncludeChecker.exe SolutionFilePath --msbuildenvpath:""C:\Program Files(x86)\Microsoft Visual Studio\2017\Professional\Common7\Tools\VsMSBuildCmd.bat"" [--build_configuration:Debug] [--build_platform:x64] [--checking_directory:some/where/dir] [--applychange] [--apply_encoding:utf-8] [--exec:""C:\Test\make_patch.bat""] [--ignoreselfheaderinclude] [--filenamefilter:xxxx.xxx]* [--includefilter:xxxx.h]*");
         }
     }
 }

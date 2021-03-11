@@ -38,6 +38,19 @@ namespace CppIncludeChecker
                 return;
             }
             _logger.Log("Collected source file count: " + sourceFilenames.Count);
+            if (string.IsNullOrEmpty(_config.CheckingDirectory) == false)
+            {
+                List<string> filteredFilenames = new List<string>();
+                foreach (string filename in sourceFilenames)
+                {
+                    if (filename.Contains(_config.CheckingDirectory))
+                    {
+                        filteredFilenames.Add(filename);
+                    }
+                }
+                _logger.Log($"Collected source file count after CheckingDirectory({_config.CheckingDirectory}): {filteredFilenames.Count}");
+                sourceFilenames = filteredFilenames;
+            }
             _logger.LogSeperateLine();
 
             if (_config.RandomSequenceTest)
