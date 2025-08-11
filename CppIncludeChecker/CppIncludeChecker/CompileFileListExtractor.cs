@@ -45,7 +45,8 @@ namespace CppIncludeChecker
             foreach (string filename in filenames)
             {
                 string projectFileDirectoryPath = Path.GetDirectoryName(projectFileFullPath);
-                string fullpath = Path.GetFullPath(Path.Combine(projectFileDirectoryPath, filename));
+                string normalizedFilename = filename.Replace('\\', Path.DirectorySeparatorChar);
+                string fullpath = Path.GetFullPath(Path.Combine(projectFileDirectoryPath, normalizedFilename));
                 if (File.Exists(fullpath))
                 {
                     output.Add(fullpath);
@@ -105,22 +106,7 @@ namespace CppIncludeChecker
         public static Dictionary<string, List<string>> CollectLogByNode(List<string> outputs)
         {
             Dictionary<string, List<string>> result = new Dictionary<string, List<string>>();
-            string currentKey = "default";
-            foreach (string line in outputs)
-            {
-                Match buildingMatch = Regex.Match(line, @"is building ""(.*.vcxproj)"" \((\d+)\) on node");
-                if (buildingMatch.Success)
-                {
-                    string projectPathNode = buildingMatch.Groups[2].Value;
-                    AddNodeBuildLog(result, projectPathNode, line);
-                }
-                Match match = Regex.Match(line, @"^\s*(.)>");
-                if (match.Success)
-                {
-                    currentKey = match.Groups[1].Value;
-                }
-                AddNodeBuildLog(result, currentKey, line);
-            }
+            result.Add("default", outputs);
             return result;
         }
     }

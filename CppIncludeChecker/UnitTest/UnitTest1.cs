@@ -76,11 +76,13 @@ Build succeeded.
 ";
 
             string currentDirectory = Environment.CurrentDirectory;
-            string testCppSolutionDirectory = Path.Combine(currentDirectory, @"..\..\..\..\..\TestCppSolution");
+            string relativePath = @"..\..\..\..\..\TestCppSolution".Replace('\\', Path.DirectorySeparatorChar);
+            string testCppSolutionDirectory = Path.Combine(currentDirectory, relativePath);
             testCppSolutionDirectory = Path.GetFullPath(testCppSolutionDirectory);
             string replaceSource = @"E:\git\CppIncludeChecker\TestCppSolution";
             string replaceTarget = testCppSolutionDirectory;
             log = log.Replace(replaceSource, replaceTarget);
+            log = log.Replace('\\', Path.DirectorySeparatorChar);
             List<string> outputs = new List<string>();
             foreach (string line in log.Split("\n"))
             {
@@ -88,9 +90,9 @@ Build succeeded.
             }
             var fileList = CompileFileListExtractor.GetFilenames(outputs);
 
-            Assert.IsTrue(fileList.Contains(string.Format(@"{0}\TestCppSolution\SubDirectory\Module1.cpp", testCppSolutionDirectory)));
-            Assert.IsTrue(fileList.Contains(string.Format(@"{0}\Module2.cpp", testCppSolutionDirectory)));
-            Assert.IsTrue(fileList.Contains(string.Format(@"{0}\TestCppSolution\TestCppSolution.cpp", testCppSolutionDirectory)));
+            Assert.IsTrue(fileList.Contains(Path.Combine(testCppSolutionDirectory, "TestCppSolution", "SubDirectory", "Module1.cpp")));
+            Assert.IsTrue(fileList.Contains(Path.Combine(testCppSolutionDirectory, "Module2.cpp")));
+            Assert.IsTrue(fileList.Contains(Path.Combine(testCppSolutionDirectory, "TestCppSolution", "TestCppSolution.cpp")));
         }
 
         [TestMethod]
@@ -404,47 +406,47 @@ return 0;
         [TestMethod]
         public void TestSelfHeaderIncludeBasic1()
         {
-            string sourceFilename = @"aaa\bbb\a.cpp";
-            string includeLine = @"#include ""aaa\bbb\a.h""";
+            string sourceFilename = @"aaa\bbb\a.cpp".Replace('\\', Path.DirectorySeparatorChar);
+            string includeLine = @"#include ""aaa\bbb\a.h""".Replace('\\', Path.DirectorySeparatorChar);
             Assert.IsTrue(Util.IsSelfHeader(sourceFilename, includeLine));
         }
 
         [TestMethod]
         public void TestSelfHeaderIncludeBasic2()
         {
-            string sourceFilename = @"aaa\a.cpp";
-            string includeLine = @"\t #include ""aaa\include\a.h""";
+            string sourceFilename = @"aaa\a.cpp".Replace('\\', Path.DirectorySeparatorChar);
+            string includeLine = @"\t #include ""aaa\include\a.h""".Replace('\\', Path.DirectorySeparatorChar);
             Assert.IsTrue(Util.IsSelfHeader(sourceFilename, includeLine));
         }
 
         [TestMethod]
         public void TestSelfHeaderIncludeBasic3()
         {
-            string sourceFilename = @"aaa\private\a.cpp";
-            string includeLine = @"#include ""aaa\public\a.h"" ";
+            string sourceFilename = @"aaa\private\a.cpp".Replace('\\', Path.DirectorySeparatorChar);
+            string includeLine = @"#include ""aaa\public\a.h"" ".Replace('\\', Path.DirectorySeparatorChar);
             Assert.IsTrue(Util.IsSelfHeader(sourceFilename, includeLine));
         }
 
         [TestMethod]
         public void TestSelfHeaderIncludeBasic4()
         {
-            string sourceFilename = @"aaa\private\a.cpp ";
-            string includeLine = @"  #include ""aaa\public\a.h """;
+            string sourceFilename = @"aaa\private\a.cpp ".Replace('\\', Path.DirectorySeparatorChar);
+            string includeLine = @"  #include ""aaa\public\a.h """.Replace('\\', Path.DirectorySeparatorChar);
             Assert.IsTrue(Util.IsSelfHeader(sourceFilename, includeLine));
         }
 
         [TestMethod]
         public void TestSelfHeaderIncludeBasic5()
         {
-            string sourceFilename = @"aaa\private\a.cpp ";
-            string includeLine = @"  #include ""aaa\public\a.hpp """;
+            string sourceFilename = @"aaa\private\a.cpp ".Replace('\\', Path.DirectorySeparatorChar);
+            string includeLine = @"  #include ""aaa\public\a.hpp """.Replace('\\', Path.DirectorySeparatorChar);
             Assert.IsTrue(Util.IsSelfHeader(sourceFilename, includeLine));
         }
 
         [TestMethod]
         public void TestSelfHeaderIncludeBasic6()
         {
-            string sourceFilename = @"aaa\private\Module2.cpp ";
+            string sourceFilename = @"aaa\private\Module2.cpp ".Replace('\\', Path.DirectorySeparatorChar);
             string includeLine = @"#include ""Module2.h""";
             Assert.IsTrue(Util.IsSelfHeader(sourceFilename, includeLine));
         }
@@ -452,8 +454,8 @@ return 0;
         [TestMethod]
         public void TestSelfHeaderIncludeMustFail()
         {
-            string sourceFilename = @"aaa\bbb\ab.cpp";
-            string includeLine = @"#include ""aaa\bbb\a.h""";
+            string sourceFilename = @"aaa\bbb\ab.cpp".Replace('\\', Path.DirectorySeparatorChar);
+            string includeLine = @"#include ""aaa\bbb\a.h""".Replace('\\', Path.DirectorySeparatorChar);
             Assert.IsTrue(Util.IsSelfHeader(sourceFilename, includeLine) == false);
         }
     }
