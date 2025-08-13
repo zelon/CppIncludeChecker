@@ -22,6 +22,7 @@ namespace CppIncludeChecker
             process.StartInfo.StandardOutputEncoding = System.Text.Encoding.UTF8;
             process.StartInfo.CreateNoWindow = true;
             process.StartInfo.WorkingDirectory = workingDirectory;
+            process.StartInfo.EnvironmentVariables["DOTNET_CLI_UI_LANGUAGE"] = "en";
 
             Result result = new Result();
             process.OutputDataReceived += (object sender, DataReceivedEventArgs e) => {
