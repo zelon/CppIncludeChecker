@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using Microsoft.Extensions.Configuration;
 
 namespace CppIncludeChecker;
 
@@ -76,26 +77,157 @@ public class Config
         }
     }
 
+    private static void LoadFromAppSettings(Config config, string configFilePath)
+    {
+        if (!File.Exists(configFilePath))
+        {
+            return; // 설정 파일이 없으면 스킵
+        }
+
+        string directory = Path.GetDirectoryName(configFilePath);
+        string fileName = Path.GetFileName(configFilePath);
+
+        if (string.IsNullOrEmpty(directory))
+        {
+            directory = AppContext.BaseDirectory;
+        }
+
+        var configuration = new ConfigurationBuilder()
+            .SetBasePath(directory)
+            .AddJsonFile(fileName, optional: true, reloadOnChange: false)
+            .Build();
+
+        var section = configuration.GetSection("CppIncludeChecker");
+
+        config.SolutionFilePath = section["SolutionFilePath"];
+        config.MsBuildCmdPath = section["MsBuildEnvPath"];
+        config.BuildConfiguration = section["BuildConfiguration"];
+        config.BuildPlatform = section["BuildPlatform"];
+        config.CheckingDirectory = section["CheckingDirectory"];
+
+        if (bool.TryParse(section["ApplyChange"], out bool applyChange))
+        {
+            config.ApplyChange = applyChange;
+        }
+
+        string encodingName = section["ApplyEncoding"];
+        if (!string.IsNullOrEmpty(encodingName))
+        {
+            try
+            {
+                config.ApplyChangeEncoding = Encoding.GetEncoding(encodingName);
+            }
+            catch
+            {
+                // 인코딩 파싱 실패 시 무시
+            }
+        }
+
+        config.ExecCmdPath = section["ExecCmdPath"];
+
+        if (bool.TryParse(section["IgnoreSelfHeaderInclude"], out bool ignoreSelfHeader))
+        {
+            config.IgnoreSelfHeaderInclude = ignoreSelfHeader;
+        }
+
+        if (int.TryParse(section["MaxCheckFileCount"], out int maxCheckFileCount))
+        {
+            config.MaxCheckFileCount = maxCheckFileCount;
+        }
+
+        if (int.TryParse(section["MaxSuccessRemoveCount"], out int maxSuccessRemoveCount))
+        {
+            config.MaxSuccessRemoveCount = maxSuccessRemoveCount;
+        }
+
+        if (bool.TryParse(section["RandomSequence"], out bool randomSequence))
+        {
+            config.RandomSequenceTest = randomSequence;
+        }
+
+        // 배열 처리
+        var filenameFilters = section.GetSection("FilenameFilters").GetChildren();
+        foreach (var filter in filenameFilters)
+        {
+            if (!string.IsNullOrEmpty(filter.Value))
+            {
+                config.FilenameFilters.Add(filter.Value);
+            }
+        }
+
+        var includeFilters = section.GetSection("IncludeFilters").GetChildren();
+        foreach (var filter in includeFilters)
+        {
+            if (!string.IsNullOrEmpty(filter.Value))
+            {
+                config.IncludeFilters.Add(filter.Value);
+            }
+        }
+    }
+
     public static Config Parse(string[] args)
     {
-        if (args.Length < 1)
+        Config config = new Config();
+
+        // 먼저 --config-file 인자가 있는지 확인
+        string configFilePath = null;
+        bool hasConfigFile = false;
+        string testString = "--config-file:";
+        foreach (string arg in args)
         {
-            PrintUsage();
-            return null;
+            if (arg.StartsWith(testString))
+            {
+                configFilePath = arg.Substring(testString.Length);
+                hasConfigFile = true;
+                break;
+            }
         }
-        Config config = new Config
+
+        // config-file이 지정되지 않았으면 기본 appsettings.json 사용
+        if (configFilePath == null)
         {
-            SolutionFilePath = args[0]
-        };
-        if (File.Exists(config.SolutionFilePath) == false)
+            configFilePath = Path.Combine(AppContext.BaseDirectory, "appsettings.json");
+        }
+
+        // 설정 파일에서 설정 로드
+        LoadFromAppSettings(config, configFilePath);
+
+        // 명령줄 인자 처리
+        bool hasSolutionFileArg = false;
+        if (args.Length >= 1 && !args[0].StartsWith("--"))
+        {
+            // 첫 번째 인자가 --로 시작하지 않으면 솔루션 파일 경로
+            config.SolutionFilePath = args[0];
+            hasSolutionFileArg = true;
+        }
+
+        // --config-file이 없고 솔루션 파일 경로도 없으면 에러
+        if (!hasConfigFile && !hasSolutionFileArg)
+        {
+            if (string.IsNullOrEmpty(config.SolutionFilePath))
+            {
+                PrintUsage();
+                return null;
+            }
+        }
+
+        // 솔루션 파일 존재 확인
+        if (!string.IsNullOrEmpty(config.SolutionFilePath) && File.Exists(config.SolutionFilePath) == false)
         {
             Console.WriteLine("Cannot find the solution file:{0}", config.SolutionFilePath);
             return null;
         }
-        string testString = "";
+
+        testString = "";
         foreach (string arg in args)
         {
             if (arg.StartsWith("--") == false)
+            {
+                continue;
+            }
+            // --config-file은 이미 처리했으므로 스킵
+            testString = "--config-file:";
+            if (arg.StartsWith(testString))
             {
                 continue;
             }
@@ -195,6 +327,24 @@ public class Config
 
     public static void PrintUsage()
     {
-        Console.WriteLine(@"Usage: CppIncludeChecker.exe SolutionFilePath --msbuildenvpath:""C:\Program Files(x86)\Microsoft Visual Studio\2017\Professional\Common7\Tools\VsMSBuildCmd.bat"" [--build_configuration:Debug] [--build_platform:x64] [--checking_directory:some/where/dir] [--applychange] [--apply_encoding:utf-8] [--exec:""C:\Test\make_patch.bat""] [--ignoreselfheaderinclude] [--filenamefilter:xxxx.xxx]* [--includefilter:xxxx.h]*");
+        Console.WriteLine("Usage:");
+        Console.WriteLine(@"  CppIncludeChecker.exe SolutionFilePath --msbuildenvpath:""C:\Program Files(x86)\Microsoft Visual Studio\2017\Professional\Common7\Tools\VsMSBuildCmd.bat"" [options]");
+        Console.WriteLine(@"  CppIncludeChecker.exe --config-file:appsettings.json [options]");
+        Console.WriteLine();
+        Console.WriteLine("Options:");
+        Console.WriteLine(@"  --config-file:<path>              Path to configuration file (e.g., appsettings.json)");
+        Console.WriteLine(@"  --msbuildenvpath:<path>           Path to MSBuild environment batch file");
+        Console.WriteLine(@"  --build_configuration:<config>    Build configuration (e.g., Debug, Release)");
+        Console.WriteLine(@"  --build_platform:<platform>       Build platform (e.g., x64, Win32)");
+        Console.WriteLine(@"  --checking_directory:<dir>        Directory to check");
+        Console.WriteLine(@"  --applychange                     Apply changes to files");
+        Console.WriteLine(@"  --apply_encoding:<encoding>       Encoding for file changes (e.g., utf-8)");
+        Console.WriteLine(@"  --exec:<path>                     Execute batch file for each found needless include");
+        Console.WriteLine(@"  --ignoreselfheaderinclude         Ignore self header includes");
+        Console.WriteLine(@"  --maxcheckfilecount:<count>       Maximum number of files to check");
+        Console.WriteLine(@"  --maxsucessremovecount:<count>    Maximum number of successful removals");
+        Console.WriteLine(@"  --filenamefilter:<filter>         Filter for filenames (can be specified multiple times)");
+        Console.WriteLine(@"  --includefilter:<filter>          Filter for includes (can be specified multiple times)");
+        Console.WriteLine(@"  --random_sequence                 Check files in random order");
     }
 }
