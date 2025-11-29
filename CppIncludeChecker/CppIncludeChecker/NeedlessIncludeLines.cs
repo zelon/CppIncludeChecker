@@ -1,37 +1,36 @@
 ﻿using System.Collections.Generic;
 
-namespace CppIncludeChecker
+namespace CppIncludeChecker;
+
+public class NeedlessIncludeLines
 {
-    public class NeedlessIncludeLines
+    public struct IncludeLineInfo
     {
-        public struct IncludeLineInfo
-        {
-            public string Filename { get; set; }
-            public string IncludeLine { get; set; }
-        }
+        public string Filename { get; set; }
+        public string IncludeLine { get; set; }
+    }
 
-        public List<IncludeLineInfo> IncludeLineInfos { get; private set; }
+    public List<IncludeLineInfo> IncludeLineInfos { get; private set; }
 
-        public NeedlessIncludeLines()
-        {
-            IncludeLineInfos = new List<IncludeLineInfo>();
-        }
+    public NeedlessIncludeLines()
+    {
+        IncludeLineInfos = new List<IncludeLineInfo>();
+    }
 
-        public void Add(string filename, string includeLine)
+    public void Add(string filename, string includeLine)
+    {
+        IncludeLineInfos.Add(new IncludeLineInfo
         {
-            IncludeLineInfos.Add(new IncludeLineInfo
-            {
-                Filename = filename,
-                IncludeLine = includeLine
-            });
-        }
+            Filename = filename,
+            IncludeLine = includeLine
+        });
+    }
 
-        public void Print(Logger logger)
+    public void Print(Logger logger)
+    {
+        foreach (var info in IncludeLineInfos)
         {
-            foreach (var info in IncludeLineInfos)
-            {
-                logger.Log(string.Format("Found needless include line:{0}:{1}", info.Filename, info.IncludeLine));
-            }
+            logger.Log(string.Format("Found needless include line:{0}:{1}", info.Filename, info.IncludeLine));
         }
     }
 }

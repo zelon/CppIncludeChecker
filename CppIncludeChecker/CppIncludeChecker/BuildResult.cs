@@ -2,66 +2,65 @@
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
-namespace CppIncludeChecker
+namespace CppIncludeChecker;
+
+public class BuildResult
 {
-    public class BuildResult
+    public bool IsSuccess { get; private set; }
+    public List<string> Outputs { get; private set; }
+    public List<string> Errors { get; private set; }
+    public TimeSpan BuildDuration { get; private set; }
+    private string _buildSolutionConfiguration;
+
+    public BuildResult(List<string> outputs, List<string> errors, TimeSpan buildDuration)
     {
-        public bool IsSuccess { get; private set; }
-        public List<string> Outputs { get; private set; }
-        public List<string> Errors { get; private set; }
-        public TimeSpan BuildDuration { get; private set; }
-        private string _buildSolutionConfiguration;
+        Outputs = outputs;
+        Errors = errors;
+        BuildDuration = buildDuration;
+        IsSuccess = ParseBuildSuccessfulness(Outputs);
+    }
 
-        public BuildResult(List<string> outputs, List<string> errors, TimeSpan buildDuration)
+    public string GetBuildSolutionConfiguration()
+    {
+        if (string.IsNullOrEmpty(_buildSolutionConfiguration) == false)
         {
-            Outputs = outputs;
-            Errors = errors;
-            BuildDuration = buildDuration;
-            IsSuccess = ParseBuildSuccessfulness(Outputs);
-        }
-
-        public string GetBuildSolutionConfiguration()
-        {
-            if (string.IsNullOrEmpty(_buildSolutionConfiguration) == false)
-            {
-                return _buildSolutionConfiguration;
-            }
-            _buildSolutionConfiguration = ParseBuildSolutionConfiguration(Outputs);
             return _buildSolutionConfiguration;
         }
+        _buildSolutionConfiguration = ParseBuildSolutionConfiguration(Outputs);
+        return _buildSolutionConfiguration;
+    }
 
-        private bool ParseBuildSuccessfulness(List<string> output)
+    private bool ParseBuildSuccessfulness(List<string> output)
+    {
+        foreach (string line in output)
         {
-            foreach (string line in output)
+            if (line.StartsWith("Build succeeded"))
             {
-                if (line.StartsWith("Build succeeded"))
-                {
-                    return true;
-                }
+                return true;
             }
-            return false;
         }
+        return false;
+    }
 
-        private string ParseBuildSolutionConfiguration(List<string> buildOutput)
+    private string ParseBuildSolutionConfiguration(List<string> buildOutput)
+    {
+        foreach (string line in buildOutput)
         {
-            foreach (string line in buildOutput)
+            var match = Regex.Match(line, @"Building solution configuration ""(.*)""");
+            if (match.Success)
             {
-                var match = Regex.Match(line, @"Building solution configuration ""(.*)""");
-                if (match.Success)
-                {
-                    return match.Groups[1].Value.Trim();
-                }
+                return match.Groups[1].Value.Trim();
             }
-            return "UnknownBuildConfiguration";
         }
+        return "UnknownBuildConfiguration";
+    }
 
-        public string GetBuildDurationString()
+    public string GetBuildDurationString()
+    {
+        if (BuildDuration.TotalMinutes > 1)
         {
-            if (BuildDuration.TotalMinutes > 1)
-            {
-                return string.Format("{0:0.00} minutes", BuildDuration.TotalMinutes);
-            }
-            return string.Format("{0:0.00} seconds", BuildDuration.TotalSeconds);
+            return string.Format("{0:0.00} minutes", BuildDuration.TotalMinutes);
         }
+        return string.Format("{0:0.00} seconds", BuildDuration.TotalSeconds);
     }
 }

@@ -1,24 +1,23 @@
 ﻿using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
-namespace CppIncludeChecker
-{
-    public class BuildErrorFileListExtractor
-    {
-        public static SortedSet<string> Extract(List<string> logs)
-        {
-            SortedSet<string> output = new SortedSet<string>();
+namespace CppIncludeChecker;
 
-            foreach (string line in logs)
+public class BuildErrorFileListExtractor
+{
+    public static SortedSet<string> Extract(List<string> logs)
+    {
+        SortedSet<string> output = new SortedSet<string>();
+
+        foreach (string line in logs)
+        {
+            var match = Regex.Match(line, @">(.*)\(.*\): error C");
+            if (match.Success)
             {
-                var match = Regex.Match(line, @">(.*)\(.*\): error C");
-                if (match.Success)
-                {
-                    string filename = match.Groups[1].Value;
-                    output.Add(filename);
-                }
+                string filename = match.Groups[1].Value;
+                output.Add(filename);
             }
-            return output;
         }
+        return output;
     }
 }

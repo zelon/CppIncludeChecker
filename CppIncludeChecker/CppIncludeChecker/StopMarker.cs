@@ -1,8 +1,7 @@
 ﻿
-namespace CppIncludeChecker
+namespace CppIncludeChecker;
+
+public static class StopMarker
 {
-    public static class StopMarker
-    {
-        public static bool StopRequested = false;
-    }
+    public static bool StopRequested = false;
 }

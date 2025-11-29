@@ -4,86 +4,85 @@ using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace CppIncludeChecker
+namespace CppIncludeChecker;
+
+public class FileModifier : System.IDisposable
 {
-    public class FileModifier : System.IDisposable
+    public List<string> RemovedStrings { get; private set; }
+    public string Filename { get; private set; }
+    public string OriginalContent { get; private set; }
+    private byte[] _originalContentBytes;
+    private FileAttributes _originalFileAttributes;
+    private Encoding _writeEncoding;
+    private bool _applyPermanently = false;
+
+    public FileModifier(string filename, Encoding writeEncoding)
     {
-        public List<string> RemovedStrings { get; private set; }
-        public string Filename { get; private set; }
-        public string OriginalContent { get; private set; }
-        private byte[] _originalContentBytes;
-        private FileAttributes _originalFileAttributes;
-        private Encoding _writeEncoding;
-        private bool _applyPermanently = false;
+        Filename = filename;
+        _writeEncoding = writeEncoding;
+        _originalFileAttributes = File.GetAttributes(Filename);
 
-        public FileModifier(string filename, Encoding writeEncoding)
+        _originalContentBytes = File.ReadAllBytes(Filename);
+        OriginalContent = File.ReadAllText(Filename);
+    }
+
+    public void Dispose()
+    {
+        if (_applyPermanently)
         {
-            Filename = filename;
-            _writeEncoding = writeEncoding;
-            _originalFileAttributes = File.GetAttributes(Filename);
-
-            _originalContentBytes = File.ReadAllBytes(Filename);
-            OriginalContent = File.ReadAllText(Filename);
+            return;
         }
+        RevertAndWrite();
+    }
 
-        public void Dispose()
+    public void SetApplyPermanently()
+    {
+        _applyPermanently = true;
+    }
+
+    public void RemoveAndWrite(string text)
+    {
+        RemoveAndWrite(new List<string> { text });
+    }
+
+    public void RemoveAndWrite(List<string> texts)
+    {
+        Debug.Assert(RemovedStrings == null);
+        RemovedStrings = texts;
+
+        RemoveReadOnlyAttribute(Filename);
+        string result = OriginalContent;
+        foreach (string text in texts)
         {
-            if (_applyPermanently)
-            {
-                return;
-            }
-            RevertAndWrite();
+            result = RemoveIncludeLine(result, text);
         }
-
-        public void SetApplyPermanently()
+        if (_writeEncoding == null)
         {
-            _applyPermanently = true;
+            File.WriteAllText(Filename, result);
         }
-
-        public void RemoveAndWrite(string text)
+        else
         {
-            RemoveAndWrite(new List<string> { text });
+            File.WriteAllText(Filename, result, _writeEncoding);
         }
+    }
 
-        public void RemoveAndWrite(List<string> texts)
-        {
-            Debug.Assert(RemovedStrings == null);
-            RemovedStrings = texts;
+    public void RevertAndWrite()
+    {
+        RemoveReadOnlyAttribute(Filename);
+        File.WriteAllBytes(Filename, _originalContentBytes);
+        File.SetAttributes(Filename, _originalFileAttributes);
+        RemovedStrings = null;
+    }
 
-            RemoveReadOnlyAttribute(Filename);
-            string result = OriginalContent;
-            foreach (string text in texts)
-            {
-                result = RemoveIncludeLine(result, text);
-            }
-            if (_writeEncoding == null)
-            {
-                File.WriteAllText(Filename, result);
-            }
-            else
-            {
-                File.WriteAllText(Filename, result, _writeEncoding);
-            }
-        }
+    private static void RemoveReadOnlyAttribute(string filename)
+    {
+        var originalAttributes = File.GetAttributes(filename);
+        File.SetAttributes(filename, originalAttributes & ~FileAttributes.ReadOnly);
+    }
 
-        public void RevertAndWrite()
-        {
-            RemoveReadOnlyAttribute(Filename);
-            File.WriteAllBytes(Filename, _originalContentBytes);
-            File.SetAttributes(Filename, _originalFileAttributes);
-            RemovedStrings = null;
-        }
-
-        private static void RemoveReadOnlyAttribute(string filename)
-        {
-            var originalAttributes = File.GetAttributes(filename);
-            File.SetAttributes(filename, originalAttributes & ~FileAttributes.ReadOnly);
-        }
-
-        public static string RemoveIncludeLine(string input, string include)
-        {
-            string pattern = string.Format("{0}.*\n", Regex.Escape(include));
-            return Regex.Replace(input, pattern, "");
-        }
+    public static string RemoveIncludeLine(string input, string include)
+    {
+        string pattern = string.Format("{0}.*\n", Regex.Escape(include));
+        return Regex.Replace(input, pattern, "");
     }
 }
