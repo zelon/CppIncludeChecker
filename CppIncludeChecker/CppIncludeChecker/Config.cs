@@ -22,7 +22,8 @@ public class Config
     public List<string> FilenameFilters { get; set; }
     public List<string> IncludeFilters { get; set; }
     public bool RandomSequenceTest { get; set; }
-    
+    public string ProgressFilePath { get; set; } = "";
+
     public Config()
     {
         ApplyChange = false;
@@ -75,6 +76,7 @@ public class Config
         {
             logger.Log("RandomSequenceTest: True");
         }
+        logger.Log($"ProgressFilePath: {ProgressFilePath}");
     }
 
     private static void LoadFromAppSettings(Config config, string configFilePath)
@@ -144,6 +146,8 @@ public class Config
         {
             config.RandomSequenceTest = randomSequence;
         }
+
+        config.ProgressFilePath = section["ProgressFilePath"];
 
         // 배열 처리
         var filenameFilters = section.GetSection("FilenameFilters").GetChildren();
@@ -305,6 +309,12 @@ public class Config
             if (arg == "--random_sequence")
             {
                 config.RandomSequenceTest = true;
+                continue;
+            }
+            testString = "--progressfilepath:";
+            if (arg.StartsWith(testString))
+            {
+                config.ProgressFilePath = arg.Substring(testString.Length);
                 continue;
             }
         }

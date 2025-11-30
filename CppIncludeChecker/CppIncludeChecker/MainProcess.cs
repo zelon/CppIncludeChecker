@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 
 namespace CppIncludeChecker;
 
@@ -57,8 +58,20 @@ class MainProcess
         {
             Util.Shuffle(sourceFilenames);
         }
-
-        NeedlessIncludeLines needlessIncludeLines = TryRemoveIncludeAndCollectChanges(sourceFilenames);
+        var progressController = new ProgressController();
+        if (string.IsNullOrEmpty(_config.ProgressFilePath))
+        {
+            progressController.LoadFromList(sourceFilenames);
+        }
+        else
+        {
+            // 파일로부터 실패했거나, 리스트를 처음부터 갱신해야 하면 false
+            if (progressController.LoadFromFile(_config.ProgressFilePath) == false)
+            {
+                progressController.LoadFromList(sourceFilenames);
+            }
+        }
+        NeedlessIncludeLines needlessIncludeLines = TryRemoveIncludeAndCollectChanges(progressController);
         if (StopMarker.StopRequested)
         {
             return;
@@ -134,12 +147,13 @@ class MainProcess
         return buildResult;
     }
 
-    private NeedlessIncludeLines TryRemoveIncludeAndCollectChanges(List<string> filenames)
+    private NeedlessIncludeLines TryRemoveIncludeAndCollectChanges(ProgressController progressController)
     {
         NeedlessIncludeLines needlessIncludeLines = new NeedlessIncludeLines();
         int checkedFileCount = 0;
-        foreach (string filename in filenames)
+        for (; string.IsNullOrEmpty(progressController.CurrentProgressingFilename) == false; progressController.AdvanceWithSave(_config.ProgressFilePath))
         {
+            string filename = progressController.CurrentProgressingFilename;
             if (checkedFileCount > _config.MaxCheckFileCount)
             {
                 _logger.Log("Reached maxcheckfilecount,count: " + _config.MaxCheckFileCount);
@@ -147,7 +161,7 @@ class MainProcess
             }
             ++checkedFileCount;
 
-            string checkingMsg = string.Format("[{0}/{1}]", checkedFileCount, filenames.Count);
+            string checkingMsg = string.Format("[{0}/{1}]", checkedFileCount, progressController.SourceFileNames.Count);
             if (_config.MaxCheckFileCount != null)
             {
                 checkingMsg += string.Format("[max_limited {0}]", _config.MaxCheckFileCount);
