@@ -1,8 +1,8 @@
-﻿using System;
+﻿using Microsoft.Extensions.Configuration;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using Microsoft.Extensions.Configuration;
 
 namespace CppIncludeChecker;
 
@@ -12,7 +12,6 @@ public class Config
     public string SolutionFilePath { get; set; }
     public string BuildConfiguration { get; set; }
     public string BuildPlatform { get; set; }
-    public string CheckingDirectory { get; set; }
     public bool ApplyChange { get; set; }
     public Encoding ApplyChangeEncoding { get; set; }
     public string ExecCmdPath { get; set; }
@@ -21,7 +20,9 @@ public class Config
     public int? MaxSuccessRemoveCount { get; set; }
     public List<string> FilenameFilters { get; set; }
     public List<string> IncludeFilters { get; set; }
-    public bool RandomSequenceTest { get; set; }
+    public List<string> IncludeFileExtensions { get; set; } = [];
+    public List<string> FirstFileNamesToProcess { get; set; } = [];
+    public List<string> ExcludeFilters { get; set; } = [];
     public string ProgressFilePath { get; set; } = "";
 
     public Config()
@@ -30,7 +31,6 @@ public class Config
         IgnoreSelfHeaderInclude = false;
         FilenameFilters = new List<string>();
         IncludeFilters = new List<string>();
-        RandomSequenceTest = false;
     }
 
     public void Print(Logger logger)
@@ -43,10 +43,6 @@ public class Config
         if (BuildPlatform != null)
         {
             logger.Log("BuildPlatform: " + BuildPlatform);
-        }
-        if (string.IsNullOrEmpty(CheckingDirectory) == false)
-        {
-            logger.Log("CheckingDirectory: " + CheckingDirectory);
         }
         logger.Log("MsBuildCmdPath: " + MsBuildCmdPath);
         logger.Log("ApplyChange: " + ApplyChange);
@@ -71,10 +67,6 @@ public class Config
         foreach (string filter in IncludeFilters)
         {
             logger.Log("IgnoreIncludeFilter: " + filter);
-        }
-        if (RandomSequenceTest)
-        {
-            logger.Log("RandomSequenceTest: True");
         }
         logger.Log($"ProgressFilePath: {ProgressFilePath}");
     }
@@ -105,7 +97,6 @@ public class Config
         config.MsBuildCmdPath = section["MsBuildEnvPath"];
         config.BuildConfiguration = section["BuildConfiguration"];
         config.BuildPlatform = section["BuildPlatform"];
-        config.CheckingDirectory = section["CheckingDirectory"];
 
         if (bool.TryParse(section["ApplyChange"], out bool applyChange))
         {
@@ -142,11 +133,6 @@ public class Config
             config.MaxSuccessRemoveCount = maxSuccessRemoveCount;
         }
 
-        if (bool.TryParse(section["RandomSequence"], out bool randomSequence))
-        {
-            config.RandomSequenceTest = randomSequence;
-        }
-
         config.ProgressFilePath = section["ProgressFilePath"];
 
         // 배열 처리
@@ -165,6 +151,30 @@ public class Config
             if (!string.IsNullOrEmpty(filter.Value))
             {
                 config.IncludeFilters.Add(filter.Value);
+            }
+        }
+
+        foreach (var fileExtension in section.GetSection("IncludeFileExtensions").GetChildren())
+        {
+            if (string.IsNullOrEmpty(fileExtension.Value) == false)
+            {
+                config.IncludeFileExtensions.Add(fileExtension.Value.Trim('.').Trim());
+            }
+        }
+
+        foreach (var firstFileNameToProcess in section.GetSection("FirstFileNamesToProcess").GetChildren())
+        {
+            if (string.IsNullOrEmpty(firstFileNameToProcess.Value) == false)
+            {
+                config.FirstFileNamesToProcess.Add(firstFileNameToProcess.Value);
+            }
+        }
+
+        foreach (var excludeFilters in section.GetSection("ExcludeFilters").GetChildren())
+        {
+            if (string.IsNullOrEmpty(excludeFilters.Value) == false)
+            {
+                config.ExcludeFilters.Add(excludeFilters.Value);
             }
         }
     }
@@ -247,12 +257,6 @@ public class Config
                 config.BuildPlatform = arg.Substring(testString.Length);
                 continue;
             }
-            testString = "--checking_directory:";
-            if (arg.StartsWith(testString))
-            {
-                config.CheckingDirectory = arg.Substring(testString.Length);
-                continue;
-            }
             testString = "--msbuildenvpath:";
             if (arg.StartsWith(testString))
             {
@@ -304,11 +308,6 @@ public class Config
             if (arg.StartsWith(testString))
             {
                 config.IncludeFilters.Add(arg.Substring(testString.Length));
-                continue;
-            }
-            if (arg == "--random_sequence")
-            {
-                config.RandomSequenceTest = true;
                 continue;
             }
             testString = "--progressfilepath:";

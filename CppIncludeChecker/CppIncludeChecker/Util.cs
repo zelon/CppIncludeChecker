@@ -38,17 +38,4 @@ public class Util
 
         return sourceFilenameOnly == includeLineFilenameOnly;
     }
-
-    public static void Shuffle(List<string> list)
-    {
-        int count = list.Count;
-        System.Random random = new System.Random();
-        for (int i = 0; i < count; ++i)
-        {
-            int changeIndex = random.Next(list.Count);
-            string temp = list[i];
-            list[i] = list[changeIndex];
-            list[changeIndex] = temp;
-        }
-    }
 }

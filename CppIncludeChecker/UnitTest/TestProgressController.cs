@@ -1,7 +1,8 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using CppIncludeChecker;
-using System.IO;
+﻿using CppIncludeChecker;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Collections.Generic;
+using System.IO;
+using static CppIncludeChecker.ProgressController;
 
 namespace UnitTest;
 
@@ -11,36 +12,68 @@ public class TestProgressController
     [TestMethod]
     public void TestBasic()
     {
-        string tempFileName = Path.GetTempFileName();
+        string progressFileName = Path.GetTempFileName();
+
+        string sourceFileName1 = Path.GetTempFileName();
+        File.WriteAllText(sourceFileName1, @"
+#include ""test1.h""
+#include ""test2.h""
+");
+
+        string sourceFileName2 = Path.GetTempFileName();
+        File.WriteAllText(sourceFileName2, @"
+#include ""testA.h""
+#include ""testB.h""
+");
         List<string> sourceFileNames = new List<string>()
         {
-            "A.h",
-            "A.cpp"
+            sourceFileName1,
+            sourceFileName2
         };
-        ProgressController progressController = new ProgressController();
-        progressController.LoadFromList(sourceFileNames);
-        progressController.SaveToFile(tempFileName);
 
-        string fileContent = File.ReadAllText(tempFileName);
+        ProgressController progressController = new ProgressController();
+        progressController.LoadFromSetting(firstFileNamesToProcess:[], includeFileExtensions:["h", "cpp"], includeFilters: sourceFileNames, []);
+        progressController.SaveToFile(progressFileName);
+
+        string fileContent = File.ReadAllText(progressFileName);
         Assert.AreEqual(@$"
-{ProgressController.CURRENT_MARK}A.h
-A.cpp
+{ProgressController.CURRENT_MARK}{sourceFileName1},#include ""test1.h""
+{sourceFileName1},#include ""test2.h""
+{sourceFileName2},#include ""testA.h""
+{sourceFileName2},#include ""testB.h""
 ".Trim(), fileContent.Trim());
 
-        List<string> copiedFileNames = new List<string>();
-        copiedFileNames.AddRange(progressController.SourceFileNames);
+        Assert.IsNotNull(progressController.Current);
 
-        progressController.LoadFromFile(tempFileName);
+        Assert.AreEqual(sourceFileName1, progressController.Current.FileName);
+        Assert.AreEqual("#include \"test1.h\"", progressController.Current.IncludeLine);
 
-        CollectionAssert.AreEqual(copiedFileNames, progressController.SourceFileNames);
-        Assert.AreEqual("A.h", progressController.CurrentProgressingFilename);
+        // 한번 진행
+        progressController.Advance();
+        {
+            // 한번 진행하면 다음 include line 으로 넘어간다
+            Assert.AreEqual(sourceFileName1, progressController.Current.FileName);
+            Assert.AreEqual("#include \"test2.h\"", progressController.Current.IncludeLine);
+        }
 
-        // 한번 진행하면 A.cpp 로 넘어간다
-        Assert.AreEqual("A.cpp", progressController.Advance());
-        Assert.AreEqual("A.cpp", progressController.CurrentProgressingFilename);
+        // 한번 진행
+        progressController.Advance();
+        {
+            // 한번 진행하면 다음 include line 으로 넘어간다
+            Assert.AreEqual(sourceFileName2, progressController.Current.FileName);
+            Assert.AreEqual("#include \"testA.h\"", progressController.Current.IncludeLine);
+        }
+
+        // 한번 진행
+        progressController.Advance();
+        {
+            // 한번 진행하면 다음 include line 으로 넘어간다
+            Assert.AreEqual(sourceFileName2, progressController.Current.FileName);
+            Assert.AreEqual("#include \"testB.h\"", progressController.Current.IncludeLine);
+        }
 
         // 한번 더 진행하면 가르키는 파일이 없다
-        Assert.AreEqual("", progressController.Advance());
-        Assert.AreEqual("", progressController.CurrentProgressingFilename);
+        Assert.IsNull(progressController.Advance());
+        Assert.IsNull(progressController.Current);
     }
 }

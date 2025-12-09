@@ -2,7 +2,7 @@
   "profiles": {
     "CppIncludeChecker": {
       "commandName": "Project",
-      "commandLineArgs": "$(SolutionDir)..\\TestCppSolution\\TestCppSolution.sln --msbuildenvpath:\"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\Tools\\VsMSBuildCmd.bat\" --apply_encoding:utf-8 --exec:\"D:\\git\\CppIncludeChecker\\CppIncludeChecker\\TestExecCmd.bat\" --ignoreselfheaderinclude --random_sequence --filenamefilter:stdafx.cpp --filenamefilter:gtest --includefilter:stdafx.h --maxcheckfilecount:100 --maxsucessremovecount:100"
+      "commandLineArgs": "$(SolutionDir)..\\TestCppSolution\\TestCppSolution.sln --msbuildenvpath:\"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\Tools\\VsMSBuildCmd.bat\" --apply_encoding:utf-8 --exec:\"D:\\git\\CppIncludeChecker\\CppIncludeChecker\\TestExecCmd.bat\" --includefilter:\"D:\\git\\CppIncludeChecker\\TestCppSolution\\StaticLib1\" --includefilter:\"D:\\git\\CppIncludeChecker\\TestCppSolution\\TestCppSolution\" --ignoreselfheaderinclude --filenamefilter:stdafx.cpp --filenamefilter:gtest --maxcheckfilecount:100 --maxsucessremovecount:100 --progressfilepath:D:\\tmp\\CppIncludeCheckerProgress.txt"
     }
   }
 }

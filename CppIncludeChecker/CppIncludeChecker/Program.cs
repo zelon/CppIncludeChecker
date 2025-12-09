@@ -15,8 +15,9 @@ class Program
     {
         System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("en-US");
 
+        using Logger logger = new Logger("CppIncludeChecker.log");
         string version = "1.1";
-        Console.WriteLine($"CppIncludeChecker version:{version}");
+        logger.Log($"CppIncludeChecker version:{version}");
         Config config = Config.Parse(args);
         if (config == null)
         {
@@ -31,12 +32,8 @@ class Program
 
         Console.CancelKeyPress += OnCancelKeyPressed;
 
-        using (Logger logger = new Logger("CppIncludeChecker.log"))
-        {
-            config.Print(logger);
-            MainProcess mainProcess = new MainProcess(config, logger, builderCommand);
-            mainProcess.Start();
-        }
-
+        config.Print(logger);
+        MainProcess mainProcess = new MainProcess(config, logger, builderCommand);
+        mainProcess.Start();
     }
 }

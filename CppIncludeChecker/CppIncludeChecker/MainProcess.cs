@@ -6,7 +6,7 @@ namespace CppIncludeChecker;
 class MainProcess
 {
     private readonly Builder _builder;
-		private readonly Logger _logger;
+    private readonly Logger _logger;
     private readonly Config _config;
 
     public MainProcess(Config config, Logger logger, string builderCommand)
@@ -16,10 +16,32 @@ class MainProcess
         _builder = new Builder(builderCommand, _config.SolutionFilePath, _config.BuildConfiguration, _config.BuildPlatform);
     }
 
-		public void Start()
+    public void Start()
     {
         _logger.LogSeperateLine();
-        BuildResult initialRebuildResult = RebuildAtStart();
+
+        var progressController = new ProgressController();
+
+        if (string.IsNullOrEmpty(_config.ProgressFilePath))
+        { // progress file 을 사용하지 않으면 실행 인자로부터 다시 읽는다
+            progressController.LoadFromSetting(_config.FirstFileNamesToProcess, _config.IncludeFileExtensions, _config.IncludeFilters, _config.ExcludeFilters);
+        }
+        else
+        { // progress file 을 사용하면 기존 목록을 복원시도하고, 복원에 실패하면 실행 인자로부터 다시 읽는다
+            // 파일로부터 실패했거나, 리스트를 처음부터 갱신해야 하면 false
+            if (progressController.LoadFromFile(_config.ProgressFilePath) == false)
+            {
+                progressController.LoadFromSetting(_config.FirstFileNamesToProcess, _config.IncludeFileExtensions, _config.IncludeFilters, _config.ExcludeFilters);
+            }
+        }
+
+        if (progressController.FileNameAndIncludeLines.Count == 0)
+        {
+            _logger.Log("There is no files in include filters");
+            return;
+        }
+
+        BuildResult initialRebuildResult = Build();
         if (initialRebuildResult.IsSuccess == false)
         {
             _logger.Log("Failed to initial rebuild");
@@ -31,46 +53,9 @@ class MainProcess
         }
         _logger.Log("Build configuration: " + initialRebuildResult.GetBuildSolutionConfiguration());
         _logger.LogSeperateLine();
-        List<string> sourceFilenames = CompileFileListExtractor.GetFilenames(initialRebuildResult.Outputs);
-        sourceFilenames = Util.FilterOut(sourceFilenames, _config.FilenameFilters);
-        if (sourceFilenames.Count <= 0)
-        {
-				_logger.Log("Cannot extract any file");
-            return;
-        }
-        _logger.Log("Collected source file count: " + sourceFilenames.Count);
-        if (string.IsNullOrEmpty(_config.CheckingDirectory) == false)
-        {
-            List<string> filteredFilenames = new List<string>();
-            foreach (string filename in sourceFilenames)
-            {
-                if (filename.Contains(_config.CheckingDirectory))
-                {
-                    filteredFilenames.Add(filename);
-                }
-            }
-            _logger.Log($"Collected source file count after CheckingDirectory({_config.CheckingDirectory}): {filteredFilenames.Count}");
-            sourceFilenames = filteredFilenames;
-        }
+        _logger.Log("Collected source file count: " + progressController.FileNameAndIncludeLines.Count);
         _logger.LogSeperateLine();
 
-        if (_config.RandomSequenceTest)
-        {
-            Util.Shuffle(sourceFilenames);
-        }
-        var progressController = new ProgressController();
-        if (string.IsNullOrEmpty(_config.ProgressFilePath))
-        {
-            progressController.LoadFromList(sourceFilenames);
-        }
-        else
-        {
-            // 파일로부터 실패했거나, 리스트를 처음부터 갱신해야 하면 false
-            if (progressController.LoadFromFile(_config.ProgressFilePath) == false)
-            {
-                progressController.LoadFromList(sourceFilenames);
-            }
-        }
         NeedlessIncludeLines needlessIncludeLines = TryRemoveIncludeAndCollectChanges(progressController);
         if (StopMarker.StopRequested)
         {
@@ -79,7 +64,7 @@ class MainProcess
         _logger.LogSeperateLine();
         if (needlessIncludeLines.IncludeLineInfos.Count == 0)
         {
-				_logger.Log("There is no needless include. Nice project!!!!!!!!!!!");
+            _logger.Log("There is no needless include. Nice project!!!!!!!!!!!");
             return;
         }
 
@@ -121,26 +106,26 @@ class MainProcess
                 }
             }
         }
-        // Some changes can break the rebuild. So rebuild again
-        BuildResult lastBuildResult = RebuildAtLast();
+        // Some changes can break the build. So build again
+        BuildResult lastBuildResult = Build();
         if (lastBuildResult.IsSuccess)
         {
-            _logger.Log("Final rebuild is successful");
+            _logger.Log("Final build is successful");
         }
         else
         {
-            _logger.Log("Final rebuild is failed!!!!!!!!!!!!!!!!!!!!!!!");
+            _logger.Log("Final build is failed!!!!!!!!!!!!!!!!!!!!!!!");
         }
     }
 
     private BuildResult RebuildAtStart()
     {
-			_logger.Log("Start of Initial Rebuild");
+        _logger.Log("Start of Initial Rebuild");
         BuildResult buildResult = _builder.Rebuild();
-			_logger.Log("End of Initial Rebuild. BuildDuration: " + buildResult.GetBuildDurationString());
+        _logger.Log("End of Initial Rebuild. BuildDuration: " + buildResult.GetBuildDurationString());
         if (buildResult.IsSuccess == false || buildResult.Errors.Count > 0)
         {
-				_logger.Log("There are errors of StartRebuild", buildResult.Outputs, buildResult.Errors);
+            _logger.Log("There are errors of StartRebuild", buildResult.Outputs, buildResult.Errors);
             return buildResult;
         }
         _logger.LogToFile("=== Initial Rebuild result ===", buildResult.Outputs);
@@ -151,9 +136,9 @@ class MainProcess
     {
         NeedlessIncludeLines needlessIncludeLines = new NeedlessIncludeLines();
         int checkedFileCount = 0;
-        for (; string.IsNullOrEmpty(progressController.CurrentProgressingFilename) == false; progressController.AdvanceWithSave(_config.ProgressFilePath))
+        for (; progressController.Current != null; progressController.AdvanceWithSave(_config.ProgressFilePath))
         {
-            string filename = progressController.CurrentProgressingFilename;
+            ProgressController.FileNameAndIncludeLine filenameAndIncludeLine = progressController.Current;
             if (checkedFileCount > _config.MaxCheckFileCount)
             {
                 _logger.Log("Reached maxcheckfilecount,count: " + _config.MaxCheckFileCount);
@@ -161,79 +146,37 @@ class MainProcess
             }
             ++checkedFileCount;
 
-            string checkingMsg = string.Format("[{0}/{1}]", checkedFileCount, progressController.SourceFileNames.Count);
+            string checkingMsg = string.Format("[{0}/{1}]", checkedFileCount, progressController.FileNameAndIncludeLines.Count);
             if (_config.MaxCheckFileCount != null)
             {
                 checkingMsg += string.Format("[max_limited {0}]", _config.MaxCheckFileCount);
             }
-            _logger.Log(checkingMsg + string.Format(" Checking Filename: {0}", filename));
-
-            List<string> includeLines = null;
-            using (FileModifier fileModifier = new FileModifier(filename, _config.ApplyChangeEncoding))
-            {
-                includeLines = IncludeLineAnalyzer.Analyze(fileModifier.OriginalContent);
-            }
-            includeLines = Util.FilterOut(includeLines, _config.IncludeFilters);
-            if (includeLines.Count <= 0)
-            {
-                _logger.Log(string.Format("  + {0} has no include line", filename));
-                continue;
-            }
+            _logger.Log(checkingMsg + $" Checking Filename: {filenameAndIncludeLine.FileName},{filenameAndIncludeLine.IncludeLine}");
 
             SortedSet<string> oneLineNeedlessIncludeLiness = new SortedSet<string>();
             // each line removing build test
-            foreach (string includeLine in includeLines)
+            if (StopMarker.StopRequested)
             {
-                if (StopMarker.StopRequested)
-                {
-                    return needlessIncludeLines;
-                }
-                if (_config.IgnoreSelfHeaderInclude && Util.IsSelfHeader(filename, includeLine))
-                {
-                    _logger.Log(string.Format("  + skipping: {0} by IgnoreSelfHeader", includeLine));
-                    continue;
-                }
-                _logger.LogWithoutEndline(string.Format("  + testing : {0} ...", includeLine));
-                using (var fileModifier = new FileModifier(filename, _config.ApplyChangeEncoding))
-                {
-                    fileModifier.RemoveAndWrite(includeLine);
-                    BuildResult testBuildResult = _builder.Build();
-                    if (testBuildResult.IsSuccess)
-                    {
-                        _logger.LogWithoutLogTime(string.Format(" ({0} build time) ----> removing candidate", testBuildResult.GetBuildDurationString()));
-                        oneLineNeedlessIncludeLiness.Add(includeLine);
-                    }
-                    else
-                    {
-                        _logger.LogWithoutLogTime(string.Format(" ({0} build time) ----> not removing candidate", testBuildResult.GetBuildDurationString()));
-                    }
-                }
+                return needlessIncludeLines;
             }
-            // integrate build test because removing two line together cause build error
-            while (oneLineNeedlessIncludeLiness.Count > 0)
+            if (_config.IgnoreSelfHeaderInclude && Util.IsSelfHeader(filenameAndIncludeLine.FileName, filenameAndIncludeLine.IncludeLine))
             {
-                if (StopMarker.StopRequested)
+                _logger.Log(string.Format("  + skipping: {0} by IgnoreSelfHeader", filenameAndIncludeLine.IncludeLine));
+                continue;
+            }
+            _logger.LogWithoutEndline(string.Format("  + testing : {0} ...", filenameAndIncludeLine.IncludeLine));
+            using (var fileModifier = new FileModifier(filenameAndIncludeLine.FileName, _config.ApplyChangeEncoding))
+            {
+                fileModifier.RemoveAndWrite(filenameAndIncludeLine.IncludeLine);
+                BuildResult testBuildResult = _builder.Build();
+                if (testBuildResult.IsSuccess)
                 {
-                    return needlessIncludeLines;
+                    _logger.LogWithoutLogTime(string.Format(" ({0} build time) ----> removing candidate", testBuildResult.GetBuildDurationString()));
+                    oneLineNeedlessIncludeLiness.Add(filenameAndIncludeLine.IncludeLine);
                 }
-                using (FileModifier fileModifier = new FileModifier(filename, _config.ApplyChangeEncoding))
+                else
                 {
-                    List<string> integratedIncludeLines = new List<string>();
-                    foreach (string includeLine in oneLineNeedlessIncludeLiness)
-                    {
-                        integratedIncludeLines.Add(includeLine);
-                    }
-                    fileModifier.RemoveAndWrite(integratedIncludeLines);
-                    _logger.LogWithoutEndline(string.Format("  + testing integrated : {0} ...", string.Join(',', integratedIncludeLines)));
-                    BuildResult integrateTestBuildResult = _builder.Build();
-                    if (integrateTestBuildResult.IsSuccess)
-                    {
-                        _logger.LogWithoutLogTime(string.Format(" ({0} build time) ----> BUILD SUCCESS", integrateTestBuildResult.GetBuildDurationString()));
-                        break;
-                    }
-                    string removingIncludeLine = oneLineNeedlessIncludeLiness.Min;
-                    _logger.LogWithoutLogTime(string.Format(" ({0} build time) ----> build failed,revert {1} and retry", integrateTestBuildResult.GetBuildDurationString(), removingIncludeLine));
-                    oneLineNeedlessIncludeLiness.Remove(removingIncludeLine);
+                    _logger.LogWithoutLogTime(string.Format(" ({0} build time) ----> not removing candidate", testBuildResult.GetBuildDurationString()));
                 }
             }
             if (oneLineNeedlessIncludeLiness.Count <= 0)
@@ -241,11 +184,11 @@ class MainProcess
                 continue;
             }
             _logger.LogSeperateLine();
-            _logger.Log(string.Format("| Checked Filename: {0}", filename));
+            _logger.Log($"| Checked Filename: {filenameAndIncludeLine.FileName},{filenameAndIncludeLine.IncludeLine}");
             foreach (string includeLine in oneLineNeedlessIncludeLiness)
             {
                 _logger.Log("|   + found needless include: " + includeLine);
-                needlessIncludeLines.Add(filename, includeLine);
+                needlessIncludeLines.Add(filenameAndIncludeLine.FileName, includeLine);
             }
             string foundCountMsg = "|   ----> Found needless count: " + needlessIncludeLines.IncludeLineInfos.Count;
             if (_config.MaxSuccessRemoveCount != null)
@@ -301,7 +244,8 @@ class MainProcess
             {
                 _logger.Log("|  ----> Final Integration Test Build Success");
                 break;
-            } else
+            }
+            else
             {
                 _logger.Log("|  ----> Final Integration Test Build Failed");
             }
@@ -338,12 +282,13 @@ class MainProcess
         }
         return output;
     }
-    private BuildResult RebuildAtLast()
+
+    private BuildResult Build()
     {
-			_logger.Log("Start of Final Rebuild");
+        _logger.Log("Start of build");
         var lastRebuildResult = _builder.Rebuild();
-			_logger.Log("End of Final Rebuild. BuildDuration: " + lastRebuildResult.GetBuildDurationString());
-        _logger.LogToFile("=== Final Rebuild result ===", lastRebuildResult.Outputs);
+        _logger.Log("End of build. BuildDuration: " + lastRebuildResult.GetBuildDurationString());
+        _logger.LogToFile("=== Build result ===", lastRebuildResult.Outputs);
         return lastRebuildResult;
     }
 }
