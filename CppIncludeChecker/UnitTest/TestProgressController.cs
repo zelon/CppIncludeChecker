@@ -32,7 +32,7 @@ public class TestProgressController
         };
 
         ProgressController progressController = new ProgressController();
-        progressController.LoadFromSetting(firstFileNamesToProcess:[], includeFileExtensions:["h", "cpp"], includeFilters: sourceFileNames, []);
+        progressController.LoadFromSetting(firstFileNamesToProcess: [], includeFileExtensions: ["h", "cpp"], includeFilters: sourceFileNames, [], [], skipSelfHeader: false);
         progressController.SaveToFile(progressFileName);
 
         string fileContent = File.ReadAllText(progressFileName);
@@ -75,5 +75,74 @@ public class TestProgressController
         // 한번 더 진행하면 가르키는 파일이 없다
         Assert.IsNull(progressController.Advance());
         Assert.IsNull(progressController.Current);
+    }
+
+    [TestMethod]
+    public void TestSelfHeaderInclude()
+    {
+        string sourceFileName = Path.GetTempFileName();
+        string selfHeaderFileName = Path.Combine(Path.GetFileNameWithoutExtension(sourceFileName) + ".h");
+        File.WriteAllText(sourceFileName, @$"
+#include ""{selfHeaderFileName}""
+#include ""test1.h""
+#include ""test2.h""
+");
+
+        List<string> sourceFileNames = new List<string>()
+        {
+            sourceFileName,
+        };
+
+        ProgressController progressController = new ProgressController();
+        progressController.LoadFromSetting(firstFileNamesToProcess: [],
+            includeFileExtensions: ["h", "cpp"],
+            includeFilters: sourceFileNames, [],
+            excludeLineFilters: [],
+            skipSelfHeader: true);
+        string progressFileName = Path.GetTempFileName();
+        progressController.SaveToFile(progressFileName);
+
+        string fileContent = File.ReadAllText(progressFileName);
+        Assert.AreEqual(@$"
+{ProgressController.CURRENT_MARK}{sourceFileName},#include ""test1.h""
+{sourceFileName},#include ""test2.h""
+".Trim(), fileContent.Trim());
+
+        Assert.IsNotNull(progressController.Current);
+    }
+
+    [TestMethod]
+    public void TestExcludeLine()
+    {
+        string sourceFileName = Path.GetTempFileName();
+        string selfHeaderFileName = Path.Combine(Path.GetFileNameWithoutExtension(sourceFileName) + ".h");
+        File.WriteAllText(sourceFileName, @$"
+#include ""stdafx.h""
+#include ""{selfHeaderFileName}""
+#include ""test1.h""
+#include ""test2.h""
+");
+
+        List<string> sourceFileNames = new List<string>()
+        {
+            sourceFileName,
+        };
+
+        ProgressController progressController = new ProgressController();
+        progressController.LoadFromSetting(firstFileNamesToProcess: [],
+            includeFileExtensions: ["h", "cpp"],
+            includeFilters: sourceFileNames, [],
+            excludeLineFilters: ["stdafx.h"],
+            skipSelfHeader: true);
+        string progressFileName = Path.GetTempFileName();
+        progressController.SaveToFile(progressFileName);
+
+        string fileContent = File.ReadAllText(progressFileName);
+        Assert.AreEqual(@$"
+{ProgressController.CURRENT_MARK}{sourceFileName},#include ""test1.h""
+{sourceFileName},#include ""test2.h""
+".Trim(), fileContent.Trim());
+
+        Assert.IsNotNull(progressController.Current);
     }
 }

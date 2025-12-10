@@ -11,17 +11,17 @@ class Builder
         Rebuild
     }
 
+    public string BuildConfiguration { get; private set; }
+    public string BuildPlatform { get; private set; }
     private readonly string _builderCommand;
     private readonly string _solutionFileFullPath;
-    private readonly string _buildConfiguration;
-    private readonly string _buildPlatform;
     private readonly string _workingDirectory;
 
     public Builder(string builderCommand, string solutionFilePath, string buildConfiguration, string buildPlatform)
     {
         _builderCommand = builderCommand;
-        _buildConfiguration = buildConfiguration;
-        _buildPlatform = buildPlatform;
+        BuildConfiguration = buildConfiguration;
+        BuildPlatform = buildPlatform;
         _solutionFileFullPath = Path.GetFullPath(solutionFilePath);
         _workingDirectory = Path.GetDirectoryName(_solutionFileFullPath);
     }
@@ -40,13 +40,13 @@ class Builder
     {
         DateTime buildStartTime = DateTime.Now;
         string msbuildArguments = string.Format("{0} /t:{1}", _solutionFileFullPath, buildType.ToString());
-        if (_buildConfiguration != null)
+        if (BuildConfiguration != null)
         {
-            msbuildArguments += string.Format(" /property:Configuration={0}", _buildConfiguration);
+            msbuildArguments += string.Format(" /property:Configuration={0}", BuildConfiguration);
         }
-        if (_buildPlatform != null)
+        if (BuildPlatform != null)
         {
-            msbuildArguments += string.Format(" /property:Platform={0}", _buildPlatform);
+            msbuildArguments += string.Format(" /property:Platform={0}", BuildPlatform);
         }
         msbuildArguments += " /maxcpucount";
         var runResult = CommandExecutor.Run(_workingDirectory, _builderCommand, msbuildArguments);

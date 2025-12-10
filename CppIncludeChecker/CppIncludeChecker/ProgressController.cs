@@ -17,7 +17,22 @@ public class ProgressController
     public const string CURRENT_MARK = "current-->";
 
     public List<FileNameAndIncludeLine> FileNameAndIncludeLines { get; set; } = [];
-    public FileNameAndIncludeLine Current { get; set; }
+
+    private FileNameAndIncludeLine _current;
+    public FileNameAndIncludeLine Current
+    {
+        get
+        {
+            return _current;
+        }
+    }
+
+    public void SetCurrent(FileNameAndIncludeLine currentInfo, int currentIndex)
+    {
+        _current = currentInfo;
+        CurrentIndex = currentIndex;
+    }
+    public int CurrentIndex { get; set; } = 0;
 
     public void SaveToFile(string outputFileName)
     {
@@ -45,7 +60,7 @@ public class ProgressController
     public bool LoadFromFile(string fileName)
     {
         FileNameAndIncludeLines.Clear();
-        Current = null;
+        SetCurrent(null, -1);
 
         if (File.Exists(fileName) == false)
         {
@@ -73,7 +88,7 @@ public class ProgressController
             FileNameAndIncludeLines.Add(fileNameAndIncludeLine);
             if (isCurrent)
             {
-                Current = fileNameAndIncludeLine;
+                SetCurrent(fileNameAndIncludeLine, FileNameAndIncludeLines.Count - 1);
             }
         }
         if (FileNameAndIncludeLines.Count <= 0)
@@ -82,12 +97,18 @@ public class ProgressController
         }
         if (Current == null)
         {
+            FileNameAndIncludeLines.Clear();
             return false;
         }
         return true;
     }
 
-    public void LoadFromSetting(List<string> firstFileNamesToProcess, List<string> includeFileExtensions, List<string> includeFilters, List<string> excludeFilters)
+    public void LoadFromSetting(List<string> firstFileNamesToProcess,
+        List<string> includeFileExtensions,
+        List<string> includeFilters,
+        List<string> excludeFilters,
+        List<string> excludeLineFilters,
+        bool skipSelfHeader)
     {
         List<string> fileListFromIncludeFilters = [];
 
@@ -159,6 +180,23 @@ public class ProgressController
             includeLines = Util.FilterOut(includeLines, includeFilters);
             foreach (string includeLine in includeLines)
             {
+                if (skipSelfHeader && Util.IsSelfHeader(filename, includeLine))
+                {
+                    continue;
+                }
+                bool hasExcludeLineFilter = false;
+                foreach (string excludeLineFilter in excludeLineFilters)
+                {
+                    if (includeLine.Contains(excludeLineFilter))
+                    {
+                        hasExcludeLineFilter = true;
+                        break;
+                    }
+                }
+                if (hasExcludeLineFilter)
+                {
+                    continue;
+                }
                 FileNameAndIncludeLines.Add(new FileNameAndIncludeLine()
                 {
                     FileName = filename,
@@ -170,9 +208,8 @@ public class ProgressController
         {
             throw new Exception("Empty source file list");
         }
-        Current = FileNameAndIncludeLines[0];
+        SetCurrent(FileNameAndIncludeLines[0], 0);
     }
-
 
     public FileNameAndIncludeLine Advance()
     {
@@ -182,7 +219,7 @@ public class ProgressController
             // 지난번에 찾았으니 이번이 다음 파일이다
             if (found)
             {
-                Current = FileNameAndIncludeLines[i];
+                SetCurrent(FileNameAndIncludeLines[i], i);
                 return Current;
             }
             // 이번에 찾았으면 마킹
@@ -192,7 +229,7 @@ public class ProgressController
             }
         }
         // 진행해야할 파일은 없다
-        Current = null;
+        SetCurrent(null, -1);
         return Current;
     }
 

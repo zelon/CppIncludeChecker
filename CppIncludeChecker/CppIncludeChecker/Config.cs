@@ -16,20 +16,17 @@ public class Config
     public Encoding ApplyChangeEncoding { get; set; }
     public string ExecCmdPath { get; set; }
     public bool IgnoreSelfHeaderInclude { get; set; }
-    public int? MaxCheckFileCount { get; set; }
-    public int? MaxSuccessRemoveCount { get; set; }
-    public List<string> FilenameFilters { get; set; }
     public List<string> IncludeFilters { get; set; }
     public List<string> IncludeFileExtensions { get; set; } = [];
     public List<string> FirstFileNamesToProcess { get; set; } = [];
     public List<string> ExcludeFilters { get; set; } = [];
+    public List<string> ExcludeLineFilters { get; set; } = [];
     public string ProgressFilePath { get; set; } = "";
 
     public Config()
     {
         ApplyChange = false;
         IgnoreSelfHeaderInclude = false;
-        FilenameFilters = new List<string>();
         IncludeFilters = new List<string>();
     }
 
@@ -52,21 +49,9 @@ public class Config
         }
         logger.Log("ExecCmdPath: " + ExecCmdPath);
         logger.Log("IgnoreSelfHeaderInclude: " + IgnoreSelfHeaderInclude);
-        if (MaxCheckFileCount != null)
-        {
-            logger.Log("MaxCheckFileCount: " + MaxCheckFileCount);
-        }
-        if (MaxSuccessRemoveCount != null)
-        {
-            logger.Log("MaxSuccessRemoveCount: " + MaxSuccessRemoveCount);
-        }
-        foreach (string filter in FilenameFilters)
-        {
-            logger.Log("IgnoreFileFilter: " + filter);
-        }
         foreach (string filter in IncludeFilters)
         {
-            logger.Log("IgnoreIncludeFilter: " + filter);
+            logger.Log("IncludeFilter: " + filter);
         }
         logger.Log($"ProgressFilePath: {ProgressFilePath}");
     }
@@ -123,27 +108,7 @@ public class Config
             config.IgnoreSelfHeaderInclude = ignoreSelfHeader;
         }
 
-        if (int.TryParse(section["MaxCheckFileCount"], out int maxCheckFileCount))
-        {
-            config.MaxCheckFileCount = maxCheckFileCount;
-        }
-
-        if (int.TryParse(section["MaxSuccessRemoveCount"], out int maxSuccessRemoveCount))
-        {
-            config.MaxSuccessRemoveCount = maxSuccessRemoveCount;
-        }
-
         config.ProgressFilePath = section["ProgressFilePath"];
-
-        // 배열 처리
-        var filenameFilters = section.GetSection("FilenameFilters").GetChildren();
-        foreach (var filter in filenameFilters)
-        {
-            if (!string.IsNullOrEmpty(filter.Value))
-            {
-                config.FilenameFilters.Add(filter.Value);
-            }
-        }
 
         var includeFilters = section.GetSection("IncludeFilters").GetChildren();
         foreach (var filter in includeFilters)
@@ -175,6 +140,14 @@ public class Config
             if (string.IsNullOrEmpty(excludeFilters.Value) == false)
             {
                 config.ExcludeFilters.Add(excludeFilters.Value);
+            }
+        }
+
+        foreach (var excludeLineFilters in section.GetSection("ExcludeLineFilters").GetChildren())
+        {
+            if (string.IsNullOrEmpty(excludeLineFilters.Value) == false)
+            {
+                config.ExcludeLineFilters.Add(excludeLineFilters.Value);
             }
         }
     }
@@ -286,28 +259,16 @@ public class Config
                 config.IgnoreSelfHeaderInclude = true;
                 continue;
             }
-            testString = "--maxcheckfilecount:";
-            if (arg.StartsWith(testString))
-            {
-                config.MaxCheckFileCount = int.Parse(arg.Substring(testString.Length));
-                continue;
-            }
-            testString = "--maxsucessremovecount:";
-            if (arg.StartsWith(testString))
-            {
-                config.MaxSuccessRemoveCount = int.Parse(arg.Substring(testString.Length));
-                continue;
-            }
-            testString = "--filenamefilter:";
-            if (arg.StartsWith(testString))
-            {
-                config.FilenameFilters.Add(arg.Substring(testString.Length));
-                continue;
-            }
             testString = "--includefilter:";
             if (arg.StartsWith(testString))
             {
                 config.IncludeFilters.Add(arg.Substring(testString.Length));
+                continue;
+            }
+            testString = "--excludefilter:";
+            if (arg.StartsWith(testString))
+            {
+                config.ExcludeFilters.Add(arg.Substring(testString.Length));
                 continue;
             }
             testString = "--progressfilepath:";
