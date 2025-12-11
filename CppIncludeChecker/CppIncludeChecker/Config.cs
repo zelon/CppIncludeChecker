@@ -10,6 +10,7 @@ public class Config
 {
     public string MsBuildCmdPath { get; set; }
     public string SolutionFilePath { get; set; }
+    public int ExecutionCount { get; set; } = 1;
     public string BuildConfiguration { get; set; }
     public string BuildPlatform { get; set; }
     public bool ApplyChange { get; set; }
@@ -54,6 +55,7 @@ public class Config
             logger.Log("IncludeFilter: " + filter);
         }
         logger.Log($"ProgressFilePath: {ProgressFilePath}");
+        logger.Log($"ExecutionCount: {ExecutionCount}");
     }
 
     private static void LoadFromAppSettings(Config config, string configFilePath)
@@ -109,7 +111,7 @@ public class Config
         }
 
         config.ProgressFilePath = section["ProgressFilePath"];
-
+        config.ExecutionCount = int.Parse(section["ExecutionCount"]);
         var includeFilters = section.GetSection("IncludeFilters").GetChildren();
         foreach (var filter in includeFilters)
         {

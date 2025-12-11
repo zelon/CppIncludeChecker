@@ -59,8 +59,8 @@ public class BuildResult
     {
         if (BuildDuration.TotalMinutes > 1)
         {
-            return string.Format("{0:0.00} minutes", BuildDuration.TotalMinutes);
+            return string.Format("{0:0.00} min", BuildDuration.TotalMinutes);
         }
-        return string.Format("{0:0.00} seconds", BuildDuration.TotalSeconds);
+        return string.Format("{0:0.00} sec", BuildDuration.TotalSeconds);
     }
 }

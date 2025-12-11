@@ -30,7 +30,7 @@ public class NeedlessIncludeLines
     {
         foreach (var info in IncludeLineInfos)
         {
-            logger.Log(string.Format("Found needless include line:{0}:{1}", info.Filename, info.IncludeLine));
+            logger.Log($" + Unused include info: {info.Filename},{info.IncludeLine}");
         }
     }
 }
