@@ -68,7 +68,12 @@ class MainProcess
             return;
         }
         NeedlessIncludeLines needlessIncludeLines = new();
-        for (int executionCount = 1; executionCount <= _config.ExecutionCount; ++executionCount)
+        int maxExecutionCount = progressController.FileNameAndIncludeLines.Count;
+        if (_config.MaxExecutionCount.HasValue)
+        {
+            maxExecutionCount = _config.MaxExecutionCount.Value;
+        }
+        for (int executionCount = 1; executionCount <= maxExecutionCount; ++executionCount)
         {
             if (StopMarker.StopRequested)
             {
@@ -86,7 +91,7 @@ class MainProcess
             }
             string fileName = current.FileName;
             string includeLine = current.IncludeLine;
-            _logger.LogWithoutEndline($"{executionCount}/{_config.ExecutionCount}:[{progressController.CurrentIndex + 1}/{progressController.FileNameAndIncludeLines.Count}] >> {fileName},{includeLine} ... ");
+            _logger.LogWithoutEndline($"{executionCount}/{maxExecutionCount}:[{progressController.CurrentIndex + 1}/{progressController.FileNameAndIncludeLines.Count}] >> {fileName},{includeLine} ... ");
             bool hasUnusedIncludeLine = false;
             {
                 try
