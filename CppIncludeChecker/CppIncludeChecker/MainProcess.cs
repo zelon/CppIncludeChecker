@@ -91,7 +91,7 @@ class MainProcess
             }
             string fileName = current.FileName;
             string includeLine = current.IncludeLine;
-            _logger.LogWithoutEndline($"{executionCount}/{maxExecutionCount}:[{progressController.CurrentIndex + 1}/{progressController.FileNameAndIncludeLines.Count}] >> {fileName},{includeLine} ... ");
+            _logger.LogWithoutEndline($"{executionCount}/{maxExecutionCount}:[{progressController.CurrentIndex + 1}/{progressController.FileNameAndIncludeLines.Count}]({needlessIncludeLines.IncludeLineInfos.Count}) >> {fileName},{includeLine} ... ");
             bool hasUnusedIncludeLine = false;
             {
                 try
