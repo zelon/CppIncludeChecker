@@ -1,4 +1,5 @@
-﻿using static CppIncludeChecker.ProgressController;
+﻿using System.Diagnostics;
+using static CppIncludeChecker.ProgressController;
 
 namespace CppIncludeChecker;
 
@@ -17,6 +18,7 @@ class MainProcess
 
     public void Start()
     {
+        var stopwatch = Stopwatch.StartNew();
         _logger.LogSeperateLine();
 
         var progressController = new ProgressController();
@@ -70,11 +72,16 @@ class MainProcess
         {
             if (StopMarker.StopRequested)
             {
-                return;
+                break;
             }
             FileNameAndIncludeLine current = progressController.Current;
             if (current == null)
             {
+                break;
+            }
+            if (_config.MaxExecutionDurationMinutes.HasValue && stopwatch.Elapsed.TotalMinutes > _config.MaxExecutionDurationMinutes.Value)
+            {
+                _logger.Log($"Stop by MaxExecutionDurationMinutes: {_config.MaxExecutionDurationMinutes.Value}");
                 break;
             }
             string fileName = current.FileName;

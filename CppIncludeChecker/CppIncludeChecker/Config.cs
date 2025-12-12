@@ -11,6 +11,7 @@ public class Config
     public string MsBuildCmdPath { get; set; }
     public string SolutionFilePath { get; set; }
     public int ExecutionCount { get; set; } = 1;
+    public int? MaxExecutionDurationMinutes { get; set; }
     public string BuildConfiguration { get; set; }
     public string BuildPlatform { get; set; }
     public bool ApplyChange { get; set; }
@@ -56,6 +57,10 @@ public class Config
         }
         logger.Log($"ProgressFilePath: {ProgressFilePath}");
         logger.Log($"ExecutionCount: {ExecutionCount}");
+        if (MaxExecutionDurationMinutes.HasValue)
+        {
+            logger.Log($"MaxExecutionDurationMinutes: {MaxExecutionDurationMinutes.Value}");
+        }
     }
 
     private static void LoadFromAppSettings(Config config, string configFilePath)
@@ -112,6 +117,10 @@ public class Config
 
         config.ProgressFilePath = section["ProgressFilePath"];
         config.ExecutionCount = int.Parse(section["ExecutionCount"]);
+        if (int.TryParse(section["MaxExecutionDurationMinutes"], out int maxExecutionDurationMinutes) && maxExecutionDurationMinutes > 0)
+        {
+            config.MaxExecutionDurationMinutes = maxExecutionDurationMinutes;
+        }
         var includeFilters = section.GetSection("IncludeFilters").GetChildren();
         foreach (var filter in includeFilters)
         {
