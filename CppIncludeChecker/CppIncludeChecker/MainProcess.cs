@@ -49,19 +49,6 @@ class MainProcess
         _logger.Log($" + Collected file and include line count: {progressController.FileNameAndIncludeLines.Count}");
         _logger.LogSeperateLine();
 
-        _logger.LogWithoutEndline($"Initial building {_builder.BuildPlatform}|{_builder.BuildConfiguration}... ");
-        BuildResult initialRebuildResult = Build();
-        _logger.LogWithoutLogTime(" build completed. BuildDuration: " + initialRebuildResult.GetBuildDurationString());
-        if (initialRebuildResult.IsSuccess == false)
-        {
-            _logger.Log("Failed to initial build");
-            return;
-        }
-        if (StopMarker.StopRequested)
-        {
-            return;
-        }
-        _logger.LogSeperateLine();
         if (progressController.Current == null)
         {
             _logger.Log("No current index");
@@ -75,10 +62,6 @@ class MainProcess
         }
         for (int executionCount = 1; executionCount <= maxExecutionCount; ++executionCount)
         {
-            if (StopMarker.StopRequested)
-            {
-                break;
-            }
             FileNameAndIncludeLine current = progressController.Current;
             if (current == null)
             {
@@ -89,9 +72,26 @@ class MainProcess
                 _logger.Log($"Stop by MaxExecutionDurationMinutes: {_config.MaxExecutionDurationMinutes.Value}");
                 break;
             }
+
             string fileName = current.FileName;
             string includeLine = current.IncludeLine;
-            _logger.LogWithoutEndline($"{executionCount}/{maxExecutionCount}:[{progressController.CurrentIndex + 1}/{progressController.FileNameAndIncludeLines.Count}]({needlessIncludeLines.IncludeLineInfos.Count}) >> {fileName},{includeLine} ... ");
+            _logger.LogWithoutEndline($"{executionCount}/{maxExecutionCount}:[{progressController.CurrentIndex + 1}/{progressController.FileNameAndIncludeLines.Count}]({needlessIncludeLines.IncludeLineInfos.Count}) >> {fileName},{includeLine} >> ready building...");
+            if (StopMarker.StopRequested)
+            {
+                break;
+            }
+            BuildResult initialRebuildResult = Build();
+            if (StopMarker.StopRequested)
+            {
+                break;
+            }
+            if (initialRebuildResult.IsSuccess == false)
+            {
+                _logger.Log(" FAILED TO READY BUILD!!!!!!");
+                break;
+            }
+            _logger.LogWithoutLogTime($"\b\b\b completed ({initialRebuildResult.GetBuildDurationString()}) >> file modified and test building...", withoutEndline: true);
+
             bool hasUnusedIncludeLine = false;
             {
                 try
@@ -99,20 +99,29 @@ class MainProcess
                     using var fileModifier = new FileModifier(fileName, _config.ApplyChangeEncoding);
                     fileModifier.RemoveAndWrite(includeLine);
                     BuildResult testBuildResult = _builder.Build();
+                    if (StopMarker.StopRequested)
+                    {
+                        break;
+                    }
                     if (testBuildResult.IsSuccess)
                     {
-                        _logger.LogWithoutLogTime($"({testBuildResult.GetBuildDurationString()}) --> CAN BE REMOVED");
+                        _logger.LogWithoutLogTime($"\b\b\b completed ({testBuildResult.GetBuildDurationString()}) --> CAN BE REMOVED");
                         hasUnusedIncludeLine = true;
                         needlessIncludeLines.Add(fileName, includeLine);
                     }
                     else
                     {
-                        _logger.LogWithoutLogTime($"({testBuildResult.GetBuildDurationString()}) --> must be remained");
+                        _logger.LogWithoutLogTime($"\b\b\b completed ({testBuildResult.GetBuildDurationString()}) --> must be remained");
                     }
                 }
                 catch (System.IO.FileNotFoundException)
                 {
                     _logger.Log($" CANNOT FIND FILE!!!!!! file:{fileName}");
+                }
+                catch (System.IO.IOException ioException)
+                {
+                    _logger.Log($" IO EXCEPTION!!!!!! file:{fileName}, exception:{ioException.Message}");
+                    break;
                 }
             }
             progressController.AdvanceWithSave(_config.ProgressFilePath);

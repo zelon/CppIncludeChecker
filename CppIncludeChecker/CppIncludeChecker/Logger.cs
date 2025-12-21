@@ -7,77 +7,85 @@ namespace CppIncludeChecker;
 
 public class Logger : IDisposable
 {
-	private TextWriter _text_writer;
+    private TextWriter _text_writer;
 
-	public Logger(string filename)
-	{
-		_text_writer = File.CreateText(filename);
-	}
+    public Logger(string filename)
+    {
+        _text_writer = File.CreateText(filename);
+    }
 
-	public void Dispose()
-	{
-		_text_writer.Close();
-	}
+    public void Dispose()
+    {
+        _text_writer.Close();
+    }
 
-	public void Log(string text, List<string> outputs = null, List<string> errors = null)
-	{
-		text = string.Format("{0}: {1}", DateTime.Now.ToLongTimeString(), text);
+    public void Log(string text, List<string> outputs = null, List<string> errors = null)
+    {
+        text = string.Format("{0}: {1}", DateTime.Now.ToLongTimeString(), text);
 
-		Console.WriteLine(text);
-		Debug.WriteLine(text);
-		if (outputs != null)
-		{
-			foreach (string line in outputs)
-			{
-				Console.WriteLine(line);
-				Debug.WriteLine(line);
-			}
-		}
-		if (errors != null)
-		{
-			foreach (string line in errors)
-			{
-				Console.WriteLine(line);
-				Debug.WriteLine(line);
-			}
-		}
-	}
+        Console.WriteLine(text);
+        Debug.WriteLine(text);
+        if (outputs != null)
+        {
+            foreach (string line in outputs)
+            {
+                Console.WriteLine(line);
+                Debug.WriteLine(line);
+            }
+        }
+        if (errors != null)
+        {
+            foreach (string line in errors)
+            {
+                Console.WriteLine(line);
+                Debug.WriteLine(line);
+            }
+        }
+    }
 
-        public void LogWithoutLogTime(string text)
+    public void LogWithoutLogTime(string text, bool withoutEndline = false)
+    {
+        if (withoutEndline)
+        {
+            Console.Write(text);
+            Debug.Write(text);
+        }
+        else
         {
             Console.WriteLine(text);
             Debug.WriteLine(text);
         }
+    }
 
-        public void LogWithoutEndline(string text)
-	{
-		text = string.Format("{0}: {1}", DateTime.Now.ToLongTimeString(), text);
+    public void LogWithoutEndline(string text)
+    {
+        text = string.Format("{0}: {1}", DateTime.Now.ToLongTimeString(), text);
 
-		Console.Write(text);
-		Debug.Write(text);
-	}
+        Console.Write(text);
+        Debug.Write(text);
+    }
 
-        public void LogSeperateLine()
+    public void LogSeperateLine()
+    {
+        Log("--------------------------------------------------------------------");
+    }
+
+    public void LogToFile(string text, List<string> outputs = null, List<string> errors = null)
+    {
+        _text_writer.WriteLine(text);
+        if (outputs != null)
         {
-            Log("--------------------------------------------------------------------");
+            foreach (string line in outputs)
+            {
+                _text_writer.WriteLine(line);
+            }
         }
-
-	public void LogToFile(string text, List<string> outputs = null, List<string> errors = null)
-	{
-		_text_writer.WriteLine(text);
-		if (outputs != null)
-		{
-			foreach (string line in outputs)
-			{
-				_text_writer.WriteLine(line);
-			}
-		}
-		if (errors != null)
-		{
-			foreach (string line in errors)
-			{
-				_text_writer.WriteLine(line);
-			}
-		}
-	}
+        if (errors != null)
+        {
+            foreach (string line in errors)
+            {
+                _text_writer.WriteLine(line);
+            }
+        }
+    }
 }
